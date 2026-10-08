@@ -1,0 +1,231 @@
+{
+  "name": "E-commerce 5M – Reporte semanal de ventas",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## E-commerce 5M · Reporte semanal\nCada **lunes a las 8:00** consulta `GET /api/reportes/dashboard` de la semana anterior y envía el resumen al administrador.\n\n**Antes de activar:**\n1. En *Consultar dashboard* pega tu `REPORTES_API_KEY` en el header `X-API-Key`.\n2. Si n8n corre en Docker, cambia `localhost` por `host.docker.internal`.\n3. Asigna tu credencial **SMTP** al nodo de correo y escribe el correo del admin.\n4. Pruébalo con *Ejecutar ahora (prueba)*.",
+        "height": 320,
+        "width": 520
+      },
+      "id": "52b07555-0040-4b71-9447-3370e9adc127",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "57f2ff56-5e1e-4cda-a404-e0d925ce46a1",
+      "name": "Cada lunes 8:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "637297fe-637a-465c-a10b-61bed32bafd9",
+      "name": "Ejecutar ahora (prueba)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Semana anterior: de hace 7 días a ayer (formato AAAA-MM-DD)\nconst hoy = new Date();\nconst fmt = d => d.toISOString().slice(0, 10);\nconst hasta = new Date(hoy); hasta.setDate(hoy.getDate() - 1);\nconst desde = new Date(hoy); desde.setDate(hoy.getDate() - 7);\n\nreturn [{ json: { desde: fmt(desde), hasta: fmt(hasta) } }];"
+      },
+      "id": "d758a55d-10ab-42f9-b56a-d70d38443872",
+      "name": "Calcular semana anterior",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/reportes/dashboard",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "desde",
+              "value": "={{ $json.desde }}"
+            },
+            {
+              "name": "hasta",
+              "value": "={{ $json.hasta }}"
+            },
+            {
+              "name": "granularidad",
+              "value": "dia"
+            },
+            {
+              "name": "limite",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "PEGA_AQUI_TU_REPORTES_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "0e8419fb-cc64-4f94-b6a2-335573bc5854",
+      "name": "Consultar dashboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convierte la respuesta de /api/reportes/dashboard en un correo HTML\nconst d = $input.first().json;\nconst r = d.resumen;\nconst v = d.variacion;\nconst mxn = n => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });\nconst delta = x => x === null || x === undefined ? 'nuevo' : (x > 0 ? '▲ ' : x < 0 ? '▼ ' : '') + Math.abs(x) + '%';\nconst color = x => x > 0 ? '#15803d' : x < 0 ? '#b91c1c' : '#6b7280';\n\nconst kpi = (titulo, valor, variacion) => `\n  <td style=\"padding:12px;border:1px solid #e5e7eb;border-radius:8px;\">\n    <div style=\"font-size:12px;color:#6b7280;\">${titulo}</div>\n    <div style=\"font-size:20px;font-weight:700;margin:4px 0;\">${valor}</div>\n    <div style=\"font-size:12px;color:${color(variacion)};\">${delta(variacion)} vs semana previa</div>\n  </td>`;\n\nconst filasTop = d.productosTop.productos.map(p => `\n  <tr>\n    <td style=\"padding:6px 8px;border-bottom:1px solid #f3f4f6;\">${p.posicion}. ${p.nombre}</td>\n    <td style=\"padding:6px 8px;border-bottom:1px solid #f3f4f6;text-align:right;\">${p.unidades}</td>\n    <td style=\"padding:6px 8px;border-bottom:1px solid #f3f4f6;text-align:right;\">${mxn(p.ingresos)}</td>\n  </tr>`).join('') || '<tr><td colspan=\"3\" style=\"padding:8px;color:#6b7280;\">Sin ventas en la semana</td></tr>';\n\nconst estados = d.estados.estados.map(e => `${e.etiqueta}: <b>${e.cantidad}</b> (${e.porcentaje}%)`).join(' · ');\n\nconst html = `\n<div style=\"font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;color:#111827;\">\n  <div style=\"background:#0f766e;color:#fff;padding:18px 22px;border-radius:10px 10px 0 0;\">\n    <div style=\"font-size:12px;letter-spacing:2px;opacity:.85;\">TIENDA 5M · REPORTE SEMANAL</div>\n    <div style=\"font-size:20px;font-weight:700;\">${d.rango.desde} al ${d.rango.hasta}</div>\n  </div>\n  <div style=\"border:1px solid #e5e7eb;border-top:none;padding:20px 22px;border-radius:0 0 10px 10px;\">\n    <table role=\"presentation\" width=\"100%\" cellspacing=\"8\"><tr>\n      ${kpi('Ingresos', mxn(r.ingresos), v.ingresos)}\n      ${kpi('Pedidos pagados', r.pedidos, v.pedidos)}\n    </tr><tr>\n      ${kpi('Ticket por pedido', mxn(r.ticketPromedioPedido), v.ticketPromedioPedido)}\n      ${kpi('Ticket por cliente', mxn(r.ticketPromedioCliente), v.ticketPromedioCliente)}\n    </tr></table>\n    <h3 style=\"font-size:15px;margin:18px 0 6px;\">Top 5 productos</h3>\n    <table width=\"100%\" style=\"border-collapse:collapse;font-size:13px;\">\n      <tr style=\"background:#f3f4f6;\"><th style=\"text-align:left;padding:6px 8px;\">Producto</th><th style=\"text-align:right;padding:6px 8px;\">Unidades</th><th style=\"text-align:right;padding:6px 8px;\">Monto</th></tr>\n      ${filasTop}\n    </table>\n    <p style=\"font-size:13px;margin:16px 0 0;\">Pedidos por estado: ${estados}</p>\n    <p style=\"font-size:12px;color:#6b7280;margin:14px 0 0;\">Generado automáticamente por n8n a partir de /api/reportes/dashboard.</p>\n  </div>\n</div>`;\n\nreturn [{ json: {\n  asunto: `Reporte semanal Tienda 5M: ${mxn(r.ingresos)} en ${r.pedidos} pedidos (${d.rango.desde} – ${d.rango.hasta})`,\n  html,\n  texto: `Ingresos ${mxn(r.ingresos)} (${delta(v.ingresos)}), ${r.pedidos} pedidos, ticket ${mxn(r.ticketPromedioPedido)}`\n} }];"
+      },
+      "id": "3a240e58-3405-4c3b-9217-a0010b7d2ab4",
+      "name": "Armar resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "Tienda 5M <reportes@tienda5m.test>",
+        "toEmail": "admin@tienda5m.test",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "590d67a3-4db3-4a02-b220-59f94eea7800",
+      "name": "Enviar reporte al admin",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "TU_CHAT_ID",
+        "text": "={{ '📊 ' + $json.asunto + '\\n' + $json.texto }}",
+        "additionalFields": {}
+      },
+      "id": "05ae2952-cb8c-4ca6-b36f-cbfc959a0c03",
+      "name": "Telegram resumen (opcional)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        220
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Cada lunes 8:00": {
+      "main": [
+        [
+          {
+            "node": "Calcular semana anterior",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar ahora (prueba)": {
+      "main": [
+        [
+          {
+            "node": "Calcular semana anterior",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular semana anterior": {
+      "main": [
+        [
+          {
+            "node": "Consultar dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar dashboard": {
+      "main": [
+        [
+          {
+            "node": "Armar resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar resumen": {
+      "main": [
+        [
+          {
+            "node": "Enviar reporte al admin",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram resumen (opcional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

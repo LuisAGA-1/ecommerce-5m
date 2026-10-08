@@ -1,20 +1,25 @@
 const express = require("express");
 
 const {
-  verificarToken,
   autorizarRoles
 } = require("../middleware/authMiddleware");
+
+const {
+  verificarTokenOApiKey
+} = require("../middleware/apiKeyMiddleware");
 
 // =========================================================
 // RUTAS DE REPORTES ANALÍTICOS
 // Montadas en /api/reportes. Solo ADMIN.
+// Acceso: JWT de un usuario admin, o header X-API-Key
+// (REPORTES_API_KEY) para integraciones como n8n.
 // =========================================================
 function createAnalyticsRoutes(analyticsController) {
 
   const router = express.Router();
 
-  // Todas las rutas requieren token y rol admin.
-  router.use(verificarToken, autorizarRoles("admin"));
+  // Todas las rutas requieren (token o API key) y rol admin.
+  router.use(verificarTokenOApiKey, autorizarRoles("admin"));
 
   // Panel completo en una sola petición
   router.get("/dashboard", analyticsController.dashboard.bind(analyticsController));

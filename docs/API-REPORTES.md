@@ -4,7 +4,7 @@ Endpoints de solo lectura para el panel de administración del e-commerce 5M.
 Calculan métricas de rendimiento comercial a partir de las entidades **Usuario**, **Producto** y **Pedido**.
 
 - **Base URL (local):** `http://localhost:3000/api/reportes`
-- **Autenticación:** `Authorization: Bearer <token JWT>`
+- **Autenticación:** `Authorization: Bearer <token JWT>`, o bien `X-API-Key: <REPORTES_API_KEY>` para integraciones como n8n (ver `docs/N8N.md`)
 - **Rol requerido:** `admin`, en todos los endpoints.
 - **Formato:** JSON. Montos en MXN y fechas `AAAA-MM-DD`.
 
@@ -317,7 +317,7 @@ Conteo, monto y porcentaje de pedidos por estado. Considera **todos** los pedido
 | Código | Cuándo | Ejemplo de `mensaje` |
 |---|---|---|
 | `400` | Filtro inválido | `El parámetro "desde" no es una fecha válida`, `"desde" no puede ser posterior a "hasta"`, `La granularidad debe ser "dia", "semana" o "mes"`, `"limite" debe ser un entero entre 1 y 50` |
-| `401` | Sin token o token inválido | (middleware de autenticación) |
+| `401` | Sin token, token inválido o API key incorrecta | (middleware de autenticación) |
 | `403` | El usuario no es `admin` | (middleware de roles) |
 | `500` | Error de base de datos | `Error al generar el reporte` |
 

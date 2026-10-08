@@ -1,0 +1,27 @@
+# =========================================================
+# n8n local para el e-commerce 5M
+#
+#   cd n8n
+#   docker compose up -d        -> http://localhost:5678
+#
+# Desde n8n, el backend que corre en WSL se alcanza como
+# http://host.docker.internal:3000
+# =========================================================
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-ecommerce-5m
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=America/Mexico_City
+      - TZ=America/Mexico_City
+      - N8N_SECURE_COOKIE=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:
