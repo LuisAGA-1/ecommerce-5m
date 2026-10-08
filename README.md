@@ -403,3 +403,12 @@ Opcional, para acelerar las consultas cuando haya muchos pedidos:
 ```bash
 sudo -u postgres psql -d ecommerce_db -f docs/sql/indices-analitica.sql
 ```
+
+## 14. Automatización con n8n
+
+El proyecto se integra con [n8n](https://n8n.io) sin modificar el núcleo:
+
+- **Notificaciones de pedidos:** `N8nWebhookAdapter` es otra implementación del puerto `EmailServicePort`. Con `EMAIL_PROVIDER=n8n`, cada pedido nuevo se publica en un webhook de n8n y n8n envía los correos (u otros canales, como Telegram). Si n8n no responde, se usa Nodemailer como respaldo.
+- **Reporte semanal:** cada lunes, un flujo de n8n consulta `/api/reportes/dashboard` con el header `X-API-Key` y manda el resumen de ventas al administrador.
+
+Los flujos para importar están en [`n8n/`](n8n/) y la guía paso a paso en [`docs/N8N.md`](docs/N8N.md).

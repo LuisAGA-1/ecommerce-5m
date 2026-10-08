@@ -45,9 +45,10 @@ const AnalyticsController = require("./controllers/analyticsController");
 const createAnalyticsRoutes = require("./routes/analyticsRoutes");
 
 // =========================
-// NOTIFICACIONES (puerto de salida + adaptador)
+// NOTIFICACIONES (puerto de salida + adaptadores)
+// Nodemailer directo o n8n (con respaldo), según EMAIL_PROVIDER
 // =========================
-const NodemailerAdapter = require("../infrastructure/email/NodemailerAdapter");
+const crearServicioNotificaciones = require("../infrastructure/notifications/crearServicioNotificaciones");
 
 // =========================
 // APLICACIÓN
@@ -115,15 +116,12 @@ app.use(
 const orderRepository =
   new OrderRepositoryPostgres();
 
-// Adaptador de correo: aquí (y solo aquí) se decide qué
+// Adaptador de notificaciones: aquí (y solo aquí) se decide qué
 // implementación del puerto EmailServicePort se conecta.
-// EMAIL_PROVIDER=none desactiva el envío de correos.
-const emailService =
-  (process.env.EMAIL_PROVIDER || "ethereal").toLowerCase() === "none"
-    ? null
-    : new NodemailerAdapter(
-        NodemailerAdapter.configDesdeEntorno()
-      );
+//   EMAIL_PROVIDER=ethereal|mailtrap|smtp -> Nodemailer
+//   EMAIL_PROVIDER=n8n                    -> webhook de n8n (+ respaldo)
+//   EMAIL_PROVIDER=none                   -> sin notificaciones
+const emailService = crearServicioNotificaciones(process.env);
 
 const orderService = new OrderService(
   orderRepository,

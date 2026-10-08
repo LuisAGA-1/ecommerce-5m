@@ -1,0 +1,228 @@
+{
+  "name": "E-commerce 5M – Pedido creado (notificaciones)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## E-commerce 5M · Pedido creado\nRecibe el evento `pedido.creado` que publica **N8nWebhookAdapter** (backend) y envía:\n- comprobante + instrucciones de pago al **cliente**\n- aviso de nuevo pedido al **administrador**\n\n**Antes de activar:**\n1. En *Validar secreto* usa el mismo valor que `N8N_WEBHOOK_SECRET` del backend.\n2. Asigna tu credencial **SMTP** (Ethereal/Mailtrap) a los dos nodos de correo.\n3. Activa el flujo (switch *Active*) para que la URL `/webhook/pedido-creado` quede escuchando.",
+        "height": 300,
+        "width": 520
+      },
+      "id": "089ebda2-be6a-4571-b208-fa0839cd6807",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pedido-creado",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "f4434a5c-f073-4550-8ee9-d07617d08445",
+      "name": "Webhook pedido creado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        100
+      ],
+      "webhookId": "a4519761-34c6-460e-9fe4-73a56c86ea74"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c202c9b4-bba7-4fda-b83c-290f16c4a0c0",
+              "leftValue": "={{ $json.headers['x-webhook-secret'] }}",
+              "rightValue": "cambia-este-secreto",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dc920a74-aaa9-4ebe-be62-ce92d49078ec",
+      "name": "Validar secreto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "724333de-7e2c-451a-8e24-6841f582926e",
+      "name": "Secreto inválido (ignorar)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "82285f53-2d82-4b47-a759-b86aa7bbc1b8",
+              "leftValue": "={{ $json.body.destinatario }}",
+              "rightValue": "cliente",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f4074e7b-d9be-42ea-bad1-1273ff47eb8e",
+      "name": "¿Para el cliente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "Tienda 5M <no-reply@tienda5m.test>",
+        "toEmail": "={{ $json.body.para }}",
+        "subject": "={{ $json.body.correo.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.body.correo.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "11833290-9ab9-4e1e-b907-a588b9396c00",
+      "name": "Correo al cliente",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        760,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "Tienda 5M <no-reply@tienda5m.test>",
+        "toEmail": "={{ $json.body.para }}",
+        "subject": "={{ $json.body.correo.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.body.correo.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "dea78c5e-88a5-4363-a0d9-d0ac1f8139dc",
+      "name": "Correo al administrador",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        760,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "TU_CHAT_ID",
+        "text": "=🛒 Nuevo pedido {{ $json.body.pedido.folio }}\nCliente: {{ $json.body.cliente.nombre }} ({{ $json.body.cliente.email }})\nTotal: ${{ $json.body.pedido.total.toLocaleString('es-MX', { minimumFractionDigits: 2 }) }}\nEstado: {{ $json.body.pedido.estadoEtiqueta }}",
+        "additionalFields": {}
+      },
+      "id": "c16a248b-78e1-4aaa-822b-3b10cf9ead58",
+      "name": "Telegram al admin (opcional)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        300
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Webhook pedido creado": {
+      "main": [
+        [
+          {
+            "node": "Validar secreto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar secreto": {
+      "main": [
+        [
+          {
+            "node": "¿Para el cliente?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Secreto inválido (ignorar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Para el cliente?": {
+      "main": [
+        [
+          {
+            "node": "Correo al cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Correo al administrador",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram al admin (opcional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}
