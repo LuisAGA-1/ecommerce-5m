@@ -4,6 +4,31 @@ Sistema de comercio electrónico desarrollado como proyecto académico para la m
 
 El proyecto está compuesto por un backend desarrollado con Node.js y Express, un frontend desarrollado con React y Vite, y una base de datos PostgreSQL.
 
+## ▶ Demo rápida (un solo comando)
+
+```bash
+cd ~/webapp
+npm run demo
+```
+
+Este comando:
+
+- enciende PostgreSQL si está apagado (puede pedir tu contraseña de `sudo`);
+- cierra procesos viejos que ocupen los puertos 3000 y 5173;
+- levanta el **backend** (`:3000`), el **frontend** (`:5173`) y **n8n** (`:5678`) en una sola terminal;
+- abre el navegador en `http://localhost:5173`.
+
+`Ctrl+C` apaga todo.
+
+| Comando | Uso |
+|---|---|
+| `npm run demo` | Todo: PostgreSQL + backend + frontend + n8n |
+| `npm run demo -- --sin-n8n` | Sin n8n (más rápido; usa `EMAIL_PROVIDER=ethereal` en `backend/.env`) |
+| `npm run demo -- --sin-navegador` | No abre el navegador automáticamente |
+| `npm run demo:detener` | Libera los puertos 3000, 5173 y 5678 si quedó algo encendido |
+
+Si n8n ya está corriendo (por ejemplo, en Docker), la demo lo reutiliza y no lo apaga al salir.
+
 ## 1. Tecnologías utilizadas
 
 ### Backend

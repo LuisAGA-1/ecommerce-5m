@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "demo": "node scripts/demo.js",
+    "demo:detener": "node scripts/demo.js --detener",
     "start": "node backend/src/interfaces/server.js",
     "dev": "node --watch backend/src/interfaces/server.js",
     "test": "node --test backend/tests/*.test.js",
