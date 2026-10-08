@@ -37,6 +37,14 @@ const OrderController = require("./controllers/orderController");
 const createOrderRoutes = require("./routes/orderRoutes");
 
 // =========================
+// REPORTES ANALÍTICOS
+// =========================
+const AnalyticsRepositoryAdapter = require("../infrastructure/repositories/AnalyticsRepositoryAdapter");
+const AnalyticsService = require("../application/analytics/AnalyticsService");
+const AnalyticsController = require("./controllers/analyticsController");
+const createAnalyticsRoutes = require("./routes/analyticsRoutes");
+
+// =========================
 // NOTIFICACIONES (puerto de salida + adaptador)
 // =========================
 const NodemailerAdapter = require("../infrastructure/email/NodemailerAdapter");
@@ -130,6 +138,24 @@ const orderController =
 app.use(
   "/pedidos",
   createOrderRoutes(orderController)
+);
+
+// =========================
+// REPORTES ANALÍTICOS (solo admin)
+// Puerto de salida AnalyticsRepository -> adaptador PostgreSQL
+// =========================
+const analyticsRepository =
+  new AnalyticsRepositoryAdapter();
+
+const analyticsService =
+  new AnalyticsService(analyticsRepository);
+
+const analyticsController =
+  new AnalyticsController(analyticsService);
+
+app.use(
+  "/api/reportes",
+  createAnalyticsRoutes(analyticsController)
 );
 
 // =========================

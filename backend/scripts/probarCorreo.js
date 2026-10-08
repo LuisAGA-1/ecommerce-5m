@@ -8,7 +8,9 @@
 // imprime las URL de vista previa; con mailtrap, revisa tu
 // bandeja de pruebas en https://mailtrap.io
 // =========================================================
-require("dotenv").config({ path: __dirname + "/../../.env" });
+// Mismo .env que usa el servidor (backend/.env); la raíz queda como respaldo.
+require("dotenv").config({ path: __dirname + "/../.env", quiet: true });
+require("dotenv").config({ path: __dirname + "/../../.env", quiet: true });
 
 const NodemailerAdapter = require("../src/infrastructure/email/NodemailerAdapter");
 

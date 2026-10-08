@@ -20,6 +20,13 @@ function Sidebar({ vistaActual, cambiarVista }) {
           <span>Dashboard</span>
         </button>
 
+        <button
+          className={vistaActual === "reportes" ? "menu-item active" : "menu-item"}
+          onClick={() => cambiarVista("reportes")}
+        >
+          <span>Reportes</span>
+        </button>
+
         <p className="menu-title">GESTIÓN</p>
 
         <button
