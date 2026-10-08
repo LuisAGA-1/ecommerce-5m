@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 860" width="1400" height="860" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+    </marker>
+    <marker id="an" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0f766e"/>
+    </marker>
+    <marker id="ai" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="860" fill="#ffffff"/>
+
+  <text x="40" y="48" font-size="24" font-weight="700" fill="#111827">Arquitectura Hexagonal – Subsistema analítico (Reportes)</text>
+  <text x="40" y="74" font-size="14" fill="#6b7280">Puerto de entrada AnalyticsService + puerto de salida AnalyticsRepository (elementos nuevos en verde)</text>
+
+  <rect x="1010" y="30" width="16" height="16" rx="3" fill="#f0fdfa" stroke="#0f766e" stroke-width="2"/>
+  <text x="1034" y="43" font-size="13" fill="#374151">Nuevo en esta actividad</text>
+  <rect x="1200" y="30" width="16" height="16" rx="3" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="1224" y="43" font-size="13" fill="#374151">Existente</text>
+  <line x1="1010" y1="62" x2="1050" y2="62" stroke="#0f766e" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ai)"/>
+  <text x="1060" y="66" font-size="13" fill="#374151">implementa (extends)</text>
+
+  <!-- ENTRADA -->
+  <text x="40" y="128" font-size="13" font-weight="700" fill="#6b7280" letter-spacing="1">ADAPTADORES DE ENTRADA</text>
+
+  <rect x="40" y="145" width="270" height="215" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="58" y="172" font-size="15" font-weight="700" fill="#1e1b4b">Frontend React + Vite</text>
+  <text x="58" y="193" font-size="12" fill="#374151">Sidebar admin → vista "Reportes"</text>
+  <rect x="52" y="205" width="246" height="143" rx="7" fill="#f0fdfa" stroke="#0f766e" stroke-width="2"/>
+  <text x="64" y="227" font-size="13" font-weight="700" fill="#115e59">AnalyticsDashboard.jsx</text>
+  <text x="64" y="247" font-size="12" fill="#134e4a">FiltrosReporte (7/30/90 días,</text>
+  <text x="64" y="263" font-size="12" fill="#134e4a">  mes, año, personalizado)</text>
+  <text x="64" y="281" font-size="12" fill="#134e4a">KpiCards · IngresosChart</text>
+  <text x="64" y="299" font-size="12" fill="#134e4a">EstadosPieChart · RankingProductos</text>
+  <text x="64" y="320" font-size="12" font-weight="700" fill="#115e59">Recharts (Area/Bar/Pie)</text>
+  <text x="64" y="337" font-size="11" fill="#134e4a">analyticsService.js (fetch)</text>
+
+  <line x1="175" y1="360" x2="175" y2="408" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+  <text x="185" y="382" font-size="11" fill="#374151">GET /api/reportes/dashboard</text>
+  <text x="185" y="397" font-size="11" fill="#6b7280">?desde&amp;hasta&amp;granularidad…</text>
+
+  <rect x="40" y="410" width="270" height="140" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="2"/>
+  <text x="58" y="436" font-size="15" font-weight="700" fill="#115e59">Express (interfaces)</text>
+  <text x="58" y="458" font-size="12" fill="#134e4a">analyticsRoutes: /dashboard,</text>
+  <text x="58" y="475" font-size="11.5" fill="#134e4a">/resumen, /ingresos, /productos-top, …</text>
+  <text x="58" y="497" font-size="12" fill="#374151">verificarToken + autorizarRoles("admin")</text>
+  <text x="58" y="519" font-size="12" fill="#134e4a">AnalyticsController (400 si filtro inválido)</text>
+  <text x="58" y="538" font-size="11" fill="#6b7280">server.js: inyección de dependencias</text>
+
+  <!-- HEXÁGONO -->
+  <polygon points="420,450 515,150 885,150 980,450 885,750 515,750" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+  <text x="700" y="183" font-size="13" font-weight="700" fill="#6b7280" text-anchor="middle" letter-spacing="1">NÚCLEO (sin dependencias externas)</text>
+
+  <rect x="525" y="198" width="350" height="190" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="2.5"/>
+  <text x="541" y="222" font-size="11" font-weight="700" fill="#0f766e" letter-spacing="1">APLICACIÓN · PUERTO DE ENTRADA</text>
+  <text x="541" y="246" font-size="17" font-weight="700" fill="#115e59">AnalyticsService</text>
+  <text x="541" y="270" font-size="12" fill="#134e4a">obtenerDashboard() · obtenerResumen()</text>
+  <text x="541" y="288" font-size="12" fill="#134e4a">obtenerIngresos() · obtenerProductosTop()</text>
+  <text x="541" y="306" font-size="12" fill="#134e4a">obtenerEstados()</text>
+  <text x="541" y="330" font-size="12" fill="#374151">Ticket promedio = ingresos ÷ pedidos</text>
+  <text x="541" y="348" font-size="12" fill="#374151">              y ÷ clientes compradores</text>
+  <text x="541" y="370" font-size="12" fill="#374151">% por estado · variación vs período anterior</text>
+
+  <rect x="510" y="405" width="380" height="325" rx="10" fill="#ffffff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="526" y="429" font-size="12" font-weight="700" fill="#4338ca" letter-spacing="1">DOMINIO</text>
+  <rect x="526" y="440" width="170" height="62" rx="6" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="611" y="463" font-size="13" font-weight="700" fill="#115e59" text-anchor="middle">FiltroReporte</text>
+  <text x="611" y="480" font-size="11" fill="#134e4a" text-anchor="middle">rango, granularidad,</text>
+  <text x="611" y="494" font-size="11" fill="#134e4a" text-anchor="middle">base · período anterior</text>
+  <rect x="704" y="440" width="170" height="62" rx="6" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="789" y="463" font-size="13" font-weight="700" fill="#115e59" text-anchor="middle">EstadosPedido</text>
+  <text x="789" y="480" font-size="11" fill="#134e4a" text-anchor="middle">Pendiente · Pagado ·</text>
+  <text x="789" y="494" font-size="11" fill="#134e4a" text-anchor="middle">Enviado · Cancelado</text>
+
+  <rect x="526" y="512" width="348" height="34" rx="6" fill="#eef2ff" stroke="#4338ca"/>
+  <text x="700" y="534" font-size="12" fill="#1e1b4b" text-anchor="middle">Entidades User · Product · Order (sin cambios)</text>
+
+  <rect x="526" y="556" width="348" height="160" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="2.5"/>
+  <text x="542" y="579" font-size="11" font-weight="700" fill="#0f766e" letter-spacing="1">«interface» PUERTO DE SALIDA · NUEVO</text>
+  <text x="542" y="602" font-size="17" font-weight="700" fill="#115e59">AnalyticsRepository</text>
+  <text x="542" y="626" font-size="12" fill="#134e4a">+ obtenerResumen(filtro)</text>
+  <text x="542" y="644" font-size="12" fill="#134e4a">+ obtenerIngresosPorPeriodo(filtro)</text>
+  <text x="542" y="662" font-size="12" fill="#134e4a">+ obtenerProductosMasVendidos(filtro, opc)</text>
+  <text x="542" y="680" font-size="12" fill="#134e4a">+ obtenerPedidosPorEstado(filtro)</text>
+  <text x="542" y="698" font-size="12" fill="#134e4a">+ contarClientesRegistrados()</text>
+
+  <path d="M700,388 L700,398 L470,398 L470,636 L524,636" fill="none" stroke="#0f766e" stroke-width="2" marker-end="url(#an)"/>
+  <text x="476" y="520" font-size="12" font-weight="700" fill="#0f766e">usa</text>
+
+  <line x1="310" y1="480" x2="523" y2="300" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- SALIDA -->
+  <text x="1040" y="128" font-size="13" font-weight="700" fill="#6b7280" letter-spacing="1">ADAPTADORES DE SALIDA</text>
+
+  <rect x="1040" y="145" width="320" height="120" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="1058" y="172" font-size="15" font-weight="700" fill="#1e1b4b">Repositorios operativos</text>
+  <text x="1058" y="194" font-size="12" fill="#374151">OrderRepositoryPostgres, ProductRepository…</text>
+  <text x="1058" y="214" font-size="12" fill="#374151">CRUD y cambios de estado (comandos)</text>
+  <text x="1058" y="242" font-size="11" fill="#6b7280">Sin carga de reportes (CQRS ligero)</text>
+
+  <rect x="1040" y="330" width="320" height="300" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="2.5"/>
+  <text x="1058" y="354" font-size="11" font-weight="700" fill="#0f766e" letter-spacing="1">NUEVO · infrastructure/repositories</text>
+  <text x="1058" y="378" font-size="16" font-weight="700" fill="#115e59">AnalyticsRepositoryAdapter</text>
+  <text x="1058" y="398" font-size="12" fill="#134e4a">extends AnalyticsRepository · solo lectura</text>
+  <rect x="1054" y="410" width="292" height="206" rx="6" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="1066" y="431" font-size="12" font-weight="700" fill="#115e59">Agregación en PostgreSQL</text>
+  <text x="1066" y="452" font-size="11.5" fill="#134e4a">SUM(total) · COUNT(*) · COUNT(DISTINCT</text>
+  <text x="1066" y="468" font-size="11.5" fill="#134e4a">  usuario_id) → resumen y tickets</text>
+  <text x="1066" y="490" font-size="11.5" fill="#134e4a">date_trunc('day'|'week'|'month')</text>
+  <text x="1066" y="506" font-size="11.5" fill="#134e4a">  + generate_series → serie continua</text>
+  <text x="1066" y="528" font-size="11.5" fill="#134e4a">SUM(cantidad × precio) GROUP BY producto</text>
+  <text x="1066" y="544" font-size="11.5" fill="#134e4a">  ORDER BY unidades|ingresos LIMIT n</text>
+  <text x="1066" y="566" font-size="11.5" fill="#134e4a">COUNT(*) GROUP BY estado</text>
+  <text x="1066" y="590" font-size="11.5" fill="#374151">fecha &gt;= desde AND fecha &lt; hasta+1</text>
+  <text x="1066" y="606" font-size="11" fill="#6b7280">índices: docs/sql/indices-analitica.sql</text>
+
+  <line x1="1038" y1="520" x2="878" y2="630" stroke="#0f766e" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#ai)"/>
+  <text x="1030" y="600" font-size="12" font-weight="700" fill="#0f766e" text-anchor="end">implementa</text>
+
+  <rect x="1060" y="690" width="280" height="60" rx="30" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="1200" y="716" font-size="14" font-weight="600" fill="#111827" text-anchor="middle">PostgreSQL</text>
+  <text x="1200" y="735" font-size="11" fill="#6b7280" text-anchor="middle">usuarios · productos · pedidos · detalle</text>
+  <line x1="1200" y1="630" x2="1200" y2="688" stroke="#374151" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="1200" y1="265" x2="1200" y2="328" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="1210" y="300" font-size="11" fill="#6b7280">misma BD</text>
+
+  <rect x="40" y="590" width="350" height="230" rx="10" fill="#f9fafb" stroke="#e5e7eb"/>
+  <text x="58" y="618" font-size="14" font-weight="700" fill="#111827">Flujo de una consulta</text>
+  <text x="58" y="644" font-size="13" fill="#374151">1. El admin elige rango y filtros.</text>
+  <text x="58" y="666" font-size="13" fill="#374151">2. El controlador pasa los parámetros</text>
+  <text x="74" y="684" font-size="13" fill="#374151">al caso de uso (valida FiltroReporte).</text>
+  <text x="58" y="706" font-size="13" fill="#374151">3. AnalyticsService pide al puerto los</text>
+  <text x="74" y="724" font-size="13" fill="#374151">datos ya agregados (en paralelo).</text>
+  <text x="58" y="746" font-size="13" fill="#374151">4. Calcula tickets, % y variaciones.</text>
+  <text x="58" y="768" font-size="13" fill="#374151">5. React dibuja KPIs, gráficas y ranking.</text>
+  <text x="58" y="798" font-size="12" fill="#6b7280">Node nunca recorre pedidos en memoria.</text>
+</svg>

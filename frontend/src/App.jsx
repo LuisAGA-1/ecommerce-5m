@@ -8,6 +8,9 @@ import ProviderSidebar
 import Dashboard
   from "./modules/dashboard/Dashboard";
 
+import AnalyticsDashboard
+  from "./modules/analytics/AnalyticsDashboard";
+
 import UserModule
   from "./modules/auth/UserModule";
 
@@ -442,6 +445,9 @@ function App() {
               {vistaActual === "dashboard" &&
                 "Dashboard"}
 
+              {vistaActual === "reportes" &&
+                "Reportes y Analítica"}
+
               {vistaActual === "usuarios" &&
                 "Gestión de Usuarios"}
 
@@ -490,6 +496,12 @@ function App() {
 
           {vistaActual === "dashboard" && (
             <Dashboard />
+          )}
+
+          {/* Vista protegida: solo se renderiza en el layout de admin
+              y el backend exige rol admin en /api/reportes */}
+          {vistaActual === "reportes" && (
+            <AnalyticsDashboard />
           )}
 
           {vistaActual === "usuarios" && (

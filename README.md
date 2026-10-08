@@ -348,7 +348,7 @@ OrderController ──> OrderService (aplicación) ──> EmailServicePort (dom
 
 ```bash
 npm install                # instala nodemailer
-cp .env.example .env       # configura BD y correo
+cp .env.example backend/.env   # configura BD y correo (el servidor lee backend/.env)
 npm test                   # pruebas unitarias del puerto (sin BD ni SMTP)
 npm run email:prueba       # envía un correo de ejemplo sin BD
 npm run dev                # backend en http://localhost:3000
@@ -361,3 +361,45 @@ cd frontend && npm run dev # frontend en http://localhost:5173
 
 `EMAIL_PROVIDER=none` desactiva el envío.
 
+
+## 13. Panel analítico (Reportes)
+
+Vista **Reportes** en el panel del administrador, con métricas para la toma de decisiones:
+
+- Ingresos por día, semana o mes, en gráfica de líneas o de barras.
+- Distribución de pedidos por estado: Pendiente, Pagado, Enviado y Cancelado.
+- Ranking Top 5 o Top 10 de productos, por unidades o por monto recaudado.
+- Ticket promedio por pedido y por cliente, con variación frente al período anterior.
+- Filtros: últimos 7, 30 o 90 días, este mes, mes anterior, este año o rango personalizado.
+
+### Diseño hexagonal
+
+```text
+React (AnalyticsDashboard + Recharts)
+   │  GET /api/reportes/dashboard?desde&hasta&granularidad&base&limite&ordenarPor
+   ▼
+analyticsRoutes (JWT + rol admin) → AnalyticsController
+   ▼
+AnalyticsService  (caso de uso / puerto de entrada)
+   │  usa FiltroReporte y EstadosPedido (dominio)
+   ▼
+AnalyticsRepository (puerto de salida, solo lectura)
+   ▲ implementa
+AnalyticsRepositoryAdapter (PostgreSQL: SUM, COUNT, GROUP BY, date_trunc, generate_series)
+```
+
+La especificación completa de los endpoints está en [`docs/API-REPORTES.md`](docs/API-REPORTES.md).
+
+### Ejecución
+
+```bash
+npm test                                   # incluye las pruebas del caso de uso analítico
+npm run seed:analitica                     # datos demo (opcional)
+cd frontend && npm install && npm run dev  # instala recharts
+```
+
+Opcional, para acelerar las consultas cuando haya muchos pedidos:
+
+```bash
+sudo -u postgres psql -d ecommerce_db -f docs/sql/indices-analitica.sql
+```
