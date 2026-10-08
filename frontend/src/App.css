@@ -2644,3 +2644,191 @@ tbody tr:hover {
   }
 
 }
+
+
+/* =========================================================
+   CHECKOUT: MÉTODO DE PAGO Y CONFIRMACIÓN
+   (Actividad: notificaciones por correo)
+   ========================================================= */
+
+.checkout-payment-method {
+  margin: 16px 0;
+}
+
+.checkout-payment-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.checkout-payment-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid #111827;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9fafb;
+}
+
+.checkout-payment-option input {
+  margin-top: 3px;
+  accent-color: #111827;
+}
+
+.checkout-payment-option strong {
+  display: block;
+  font-size: 13px;
+  color: #111827;
+}
+
+.checkout-payment-option small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+.client-checkout-button:disabled {
+  background: #9ca3af;
+  cursor: wait;
+}
+
+.checkout-confirmation {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 26px;
+}
+
+.checkout-confirmation-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.checkout-confirmation-header h2 {
+  margin: 4px 0 8px;
+}
+
+.checkout-confirmation-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.checkout-status-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.checkout-confirmation-body {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 22px;
+}
+
+.checkout-confirmation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.checkout-confirmation-table th {
+  text-align: left;
+  background: #f3f4f6;
+  padding: 9px 10px;
+  color: #374151;
+}
+
+.checkout-confirmation-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.checkout-confirmation-table th:last-child,
+.checkout-confirmation-table td:last-child {
+  text-align: right;
+}
+
+.checkout-confirmation-table tfoot td {
+  font-weight: 700;
+  font-size: 15px;
+  border-bottom: none;
+}
+
+.checkout-next-steps {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.checkout-next-steps h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #1e3a8a;
+}
+
+.checkout-next-steps ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.checkout-dev-preview {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #6b7280;
+}
+
+.checkout-dev-preview a {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.checkout-confirmation-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.checkout-confirmation-actions button {
+  width: auto;
+}
+
+@media (max-width: 800px) {
+  .checkout-confirmation-body {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-confirmation-actions {
+    flex-direction: column;
+  }
+}

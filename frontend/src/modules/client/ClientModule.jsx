@@ -9,6 +9,16 @@ import {
   getMyOrders
 } from "../../services/orderService";
 
+import CheckoutConfirmation from "../../components/CheckoutConfirmation";
+
+// Etiquetas visibles para los estados del pedido.
+// En BD el estado sigue siendo PENDIENTE / ACEPTADO / RECHAZADO.
+const ETIQUETAS_ESTADO = {
+  PENDIENTE: "Pendiente de pago",
+  ACEPTADO: "Pagado / Aceptado",
+  RECHAZADO: "Rechazado"
+};
+
 function ClientModule({
   vistaActual,
   cambiarVista
@@ -34,6 +44,14 @@ function ClientModule({
 
   const [mensaje, setMensaje] =
     useState("");
+
+  // Pedido recién generado en el checkout
+  // (se muestra la confirmación con instrucciones de pago).
+  const [pedidoConfirmado, setPedidoConfirmado] =
+    useState(null);
+
+  const [enviandoPedido, setEnviandoPedido] =
+    useState(false);
 
   // CARGAR PRODUCTOS
   async function cargarProductos() {
@@ -291,16 +309,20 @@ function ClientModule({
           cantidad: item.cantidad
         }));
 
-      await createOrder({
-        usuarioId: usuario.id,
-        detalles
-      });
+      setEnviandoPedido(true);
+
+      const pedidoCreado =
+        await createOrder({
+          usuarioId: usuario.id,
+          detalles
+        });
 
       setCarrito([]);
 
-      setMensaje(
-        "Pedido enviado correctamente. Ahora está pendiente de revisión por el administrador."
-      );
+      setPedidoConfirmado({
+        ...pedidoCreado,
+        emailCliente: usuario.email
+      });
 
       await cargarProductos();
 
@@ -314,6 +336,10 @@ function ClientModule({
         error.message ||
         "No se pudo enviar el pedido"
       );
+
+    } finally {
+
+      setEnviandoPedido(false);
     }
   }
 
@@ -779,7 +805,22 @@ function ClientModule({
 
         </div>
 
-        {carrito.length === 0 ? (
+        {pedidoConfirmado ? (
+
+          <CheckoutConfirmation
+            pedido={pedidoConfirmado}
+            formatearPrecio={formatearPrecio}
+            onVerPedidos={() => {
+              setPedidoConfirmado(null);
+              cambiarVista("pedidos");
+            }}
+            onSeguirComprando={() => {
+              setPedidoConfirmado(null);
+              cambiarVista("productos");
+            }}
+          />
+
+        ) : carrito.length === 0 ? (
 
           <div className="client-empty-state">
 
@@ -925,13 +966,45 @@ function ClientModule({
                 )}
               </strong>
 
+              <div className="checkout-payment-method">
+
+                <span className="checkout-payment-label">
+                  Método de pago
+                </span>
+
+                <label className="checkout-payment-option">
+
+                  <input
+                    type="radio"
+                    checked
+                    readOnly
+                  />
+
+                  <div>
+                    <strong>
+                      Transferencia o depósito bancario
+                    </strong>
+                    <small>
+                      No se cobra con tarjeta en línea.
+                      Recibirás por correo el comprobante
+                      y los datos bancarios.
+                    </small>
+                  </div>
+
+                </label>
+
+              </div>
+
               <button
                 className="client-checkout-button"
                 onClick={
                   realizarPedido
                 }
+                disabled={enviandoPedido}
               >
-                Enviar pedido
+                {enviandoPedido
+                  ? "Generando pedido..."
+                  : "Confirmar pedido"}
               </button>
 
               <button
@@ -944,9 +1017,10 @@ function ClientModule({
               </button>
 
               <p>
-                Tu pedido quedará pendiente
+                Tu pedido quedará como
+                <strong> Pendiente de pago </strong>
                 hasta que el administrador
-                lo revise.
+                valide tu transferencia.
               </p>
 
             </aside>
@@ -1061,7 +1135,8 @@ function ClientModule({
                       pedido.estado
                     )}
                   >
-                    {pedido.estado}
+                    {ETIQUETAS_ESTADO[pedido.estado] ||
+                      pedido.estado}
                   </span>
 
                 </div>
@@ -1114,8 +1189,9 @@ function ClientModule({
                 {pedido.estado === "PENDIENTE" && (
 
                   <p className="client-order-note">
-                    Tu pedido está esperando
-                    revisión del administrador.
+                    Realiza tu pago con las instrucciones
+                    que enviamos a tu correo. El administrador
+                    lo validará y aceptará tu pedido.
                   </p>
 
                 )}

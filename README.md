@@ -312,3 +312,52 @@ El proyecto implementa un sistema de comercio electrónico utilizando Node.js, E
 La aplicación cuenta con operaciones CRUD para usuarios, productos y pedidos, autenticación mediante JWT y control de acceso basado en roles. El proyecto puede ejecutarse en un entorno WSL2 con Ubuntu y cuenta con su código fuente disponible en GitHub para revisión.
 
 El despliegue en AWS queda pendiente hasta contar con la activación del laboratorio correspondiente.
+
+## 12. Notificaciones por correo (Puerto de salida + Adaptador)
+
+Al generar un pedido, el sistema lo registra con estado **Pendiente de pago** (en BD: `PENDIENTE`) y dispara automáticamente:
+
+1. Al **cliente**: comprobante con el desglose de la compra, total y las instrucciones/datos bancarios para pagar por transferencia o depósito.
+2. Al **administrador**: aviso de nuevo pedido con datos del cliente y del pedido.
+
+No se procesan pagos con tarjeta en línea.
+
+### Diseño hexagonal
+
+```text
+OrderController ──> OrderService (aplicación) ──> EmailServicePort (dominio/puerto)
+                                                          ▲
+                                                          │ implementa
+                                         NodemailerAdapter (infraestructura)
+                                                          │
+                                                 Nodemailer ─> Ethereal / Mailtrap / SMTP
+```
+
+| Archivo | Capa | Responsabilidad |
+| ------- | ---- | --------------- |
+| `backend/src/domain/ports/EmailServicePort.js` | Dominio | Contrato: `enviarComprobantePedido`, `notificarNuevoPedidoAdmin` |
+| `backend/src/infrastructure/email/NodemailerAdapter.js` | Infraestructura | Única clase que importa `nodemailer` |
+| `backend/src/infrastructure/email/templates/*.js` | Infraestructura | Plantillas HTML/texto de los correos |
+| `backend/src/application/orders/OrderService.js` | Aplicación | Recibe el puerto por constructor y lo invoca tras crear el pedido |
+| `backend/src/interfaces/server.js` | Interfaces | Composición: conecta el adaptador al servicio |
+| `frontend/src/components/CheckoutConfirmation.jsx` | Frontend | Confirmación del checkout con estado Pendiente de pago |
+
+`OrderService` nunca importa Nodemailer ni lee `process.env`. Si el envío falla, el pedido se conserva y la respuesta incluye `notificacion.cliente.enviado = false`.
+
+### Ejecución local (localhost)
+
+```bash
+npm install                # instala nodemailer
+cp .env.example .env       # configura BD y correo
+npm test                   # pruebas unitarias del puerto (sin BD ni SMTP)
+npm run email:prueba       # envía un correo de ejemplo sin BD
+npm run dev                # backend en http://localhost:3000
+cd frontend && npm run dev # frontend en http://localhost:5173
+```
+
+**Ethereal** (`EMAIL_PROVIDER=ethereal`): sin credenciales, se crea una cuenta al arrancar y la consola imprime usuario, contraseña y la URL de vista previa de cada correo. Inicia sesión en https://ethereal.email/login con esos datos para ver la bandeja.
+
+**Mailtrap** (`EMAIL_PROVIDER=mailtrap`): copia `SMTP_USER` y `SMTP_PASS` de tu Sandbox en mailtrap.io; los correos aparecen en la bandeja de pruebas.
+
+`EMAIL_PROVIDER=none` desactiva el envío.
+

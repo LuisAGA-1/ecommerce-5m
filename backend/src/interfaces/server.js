@@ -37,6 +37,11 @@ const OrderController = require("./controllers/orderController");
 const createOrderRoutes = require("./routes/orderRoutes");
 
 // =========================
+// NOTIFICACIONES (puerto de salida + adaptador)
+// =========================
+const NodemailerAdapter = require("../infrastructure/email/NodemailerAdapter");
+
+// =========================
 // APLICACIÓN
 // =========================
 const app = express();
@@ -102,10 +107,21 @@ app.use(
 const orderRepository =
   new OrderRepositoryPostgres();
 
+// Adaptador de correo: aquí (y solo aquí) se decide qué
+// implementación del puerto EmailServicePort se conecta.
+// EMAIL_PROVIDER=none desactiva el envío de correos.
+const emailService =
+  (process.env.EMAIL_PROVIDER || "ethereal").toLowerCase() === "none"
+    ? null
+    : new NodemailerAdapter(
+        NodemailerAdapter.configDesdeEntorno()
+      );
+
 const orderService = new OrderService(
   orderRepository,
   userRepository,
-  productRepository
+  productRepository,
+  emailService
 );
 
 const orderController =

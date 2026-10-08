@@ -2,14 +2,64 @@ const Order = require("../../domain/entities/Order");
 
 class OrderService {
 
+  /**
+   * @param {OrderRepository}   orderRepository
+   * @param {UserRepository}    userRepository
+   * @param {ProductRepository} productRepository
+   * @param {EmailServicePort}  [emailService]  Puerto de salida para
+   *        notificaciones. Es opcional: si no se inyecta, el pedido
+   *        se crea igual, solo que sin enviar correos.
+   */
   constructor(
     orderRepository,
     userRepository,
-    productRepository
+    productRepository,
+    emailService = null
   ) {
     this.orderRepository = orderRepository;
     this.userRepository = userRepository;
     this.productRepository = productRepository;
+    this.emailService = emailService;
+  }
+
+  // =========================================================
+  // NOTIFICAR PEDIDO (usa el puerto EmailServicePort)
+  //
+  // El núcleo solo invoca métodos del puerto; no sabe qué
+  // librería ni qué proveedor envía el correo. Un fallo en el
+  // envío NO revierte el pedido: se registra y se informa.
+  // =========================================================
+  async notificarPedido(pedido, cliente) {
+
+    if (!this.emailService) {
+      return {
+        cliente: { enviado: false, motivo: "Servicio de correo no configurado" },
+        admin: { enviado: false, motivo: "Servicio de correo no configurado" }
+      };
+    }
+
+    const [cliRes, admRes] = await Promise.allSettled([
+      this.emailService.enviarComprobantePedido({ pedido, cliente }),
+      this.emailService.notificarNuevoPedidoAdmin({ pedido, cliente })
+    ]);
+
+    const resultado = r =>
+      r.status === "fulfilled"
+        ? r.value
+        : { enviado: false, motivo: r.reason?.message || "Error al enviar" };
+
+    if (cliRes.status === "rejected") {
+      console.error("[pedido] No se envió el comprobante al cliente:", cliRes.reason);
+    }
+
+    if (admRes.status === "rejected") {
+      console.error("[pedido] No se notificó al administrador:", admRes.reason);
+    }
+
+    return {
+      cliente: resultado(cliRes),
+      admin: resultado(admRes)
+    };
   }
 
   // =========================================================
@@ -87,8 +137,24 @@ class OrderService {
     // de los productos.
     order.calcularTotal();
 
-    // El repositorio crea el pedido como PENDIENTE.
-    return await this.orderRepository.create(order);
+    // El repositorio crea el pedido como PENDIENTE (de pago).
+    const pedidoCreado =
+      await this.orderRepository.create(order);
+
+    // Disparar notificaciones por el puerto de salida.
+    const notificacion = await this.notificarPedido(
+      pedidoCreado,
+      {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email
+      }
+    );
+
+    return {
+      ...pedidoCreado,
+      notificacion
+    };
   }
 
   // =========================================================

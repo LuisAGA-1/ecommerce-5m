@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node backend/src/interfaces/server.js",
+    "dev": "node --watch backend/src/interfaces/server.js",
+    "test": "node --test backend/tests/*.test.js",
+    "email:prueba": "node backend/scripts/probarCorreo.js"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +21,8 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.2",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "nodemailer": "^7.0.0"
   },
   "devDependencies": {
     "vite": "^8.2.2"
