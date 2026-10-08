@@ -18,6 +18,12 @@ const fs = require("fs");
 const RAIZ = path.resolve(__dirname, "..");
 const ARGS = new Set(process.argv.slice(2));
 
+// Entorno original de la terminal, ANTES de leer backend/.env.
+// n8n debe arrancar con este entorno limpio: si recibe variables
+// del backend como N8N_WEBHOOK_URL, las interpreta como su propia
+// configuración y genera mal las URLs.
+const ENTORNO_TERMINAL = { ...process.env };
+
 require("dotenv").config({ path: path.join(RAIZ, "backend/.env"), quiet: true });
 
 const PUERTO_BACK = Number(process.env.PORT || 3000);
@@ -135,9 +141,10 @@ async function asegurarPostgres() {
 const hijos = [];
 
 function lanzar(etiqueta, color, comando, args, opciones = {}) {
+  const base = opciones.entornoLimpio ? ENTORNO_TERMINAL : process.env;
   const hijo = spawn(comando, args, {
     cwd: opciones.cwd || RAIZ,
-    env: { ...process.env, FORCE_COLOR: "1", ...(opciones.env || {}) },
+    env: { ...base, FORCE_COLOR: "1", ...(opciones.env || {}) },
     stdio: ["ignore", "pipe", "pipe"],
     detached: true // grupo propio para poder cerrarlo completo
   });
@@ -250,6 +257,7 @@ async function main() {
   if (CON_N8N && !n8nExterno) {
     log("Iniciando n8n (la primera vez puede tardar varios minutos en descargarse)…");
     lanzar("n8n", COLOR.n8n, "npx", ["--yes", "n8n"], {
+      entornoLimpio: true,
       env: { GENERIC_TIMEZONE: "America/Mexico_City", N8N_DIAGNOSTICS_ENABLED: "false" }
     });
   }
