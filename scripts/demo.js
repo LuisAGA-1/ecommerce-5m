@@ -141,7 +141,9 @@ async function asegurarPostgres() {
 const hijos = [];
 
 function lanzar(etiqueta, color, comando, args, opciones = {}) {
-  const base = opciones.entornoLimpio ? ENTORNO_TERMINAL : process.env;
+  const base = opciones.entornoLimpio
+    ? sinVariablesDelBackend(ENTORNO_TERMINAL)
+    : process.env;
   const hijo = spawn(comando, args, {
     cwd: opciones.cwd || RAIZ,
     env: { ...base, FORCE_COLOR: "1", ...(opciones.env || {}) },
@@ -158,6 +160,22 @@ function lanzar(etiqueta, color, comando, args, opciones = {}) {
   hijo.on("error", (e) => error(`No se pudo ejecutar "${comando}": ${e.message}`));
   hijos.push(hijo);
   return hijo;
+}
+
+// Variables que usa el BACKEND para hablar con n8n. Si n8n las
+// recibe (desde la terminal o desde un .env) cree que son suyas.
+const VARIABLES_SOLO_BACKEND = [
+  "N8N_WEBHOOK_URL",
+  "N8N_WEBHOOK_SECRET",
+  "N8N_TIMEOUT_MS",
+  "N8N_RESPALDO",
+  "WEBHOOK_URL"
+];
+
+function sinVariablesDelBackend(entorno) {
+  const limpio = { ...entorno };
+  for (const nombre of VARIABLES_SOLO_BACKEND) delete limpio[nombre];
+  return limpio;
 }
 
 let apagando = false;
@@ -258,6 +276,9 @@ async function main() {
     log("Iniciando n8n (la primera vez puede tardar varios minutos en descargarse)…");
     lanzar("n8n", COLOR.n8n, "npx", ["--yes", "n8n"], {
       entornoLimpio: true,
+      // Se ejecuta desde la carpeta n8n/ (sin .env) para que n8n no
+      // lea el .env de la raíz del proyecto.
+      cwd: path.join(RAIZ, "n8n"),
       env: { GENERIC_TIMEZONE: "America/Mexico_City", N8N_DIAGNOSTICS_ENABLED: "false" }
     });
   }
