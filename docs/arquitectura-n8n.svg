@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="DejaVu Sans, Arial, sans-serif">
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+<marker id="o" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1,1 L10,6 L1,11 z" fill="#fff" stroke="#c2410c" stroke-width="1.5"/></marker></defs>
+<rect width="1600" height="900" fill="#fff"/>
+<text x="40" y="52" font-size="30" font-weight="bold" fill="#0f172a">Arquitectura hexagonal – notificaciones con n8n</text>
+<text x="40" y="82" font-size="17" fill="#64748b">Un mismo puerto (EmailServicePort), tres adaptadores intercambiables</text>
+<rect x="40" y="110" width="360" height="230" rx="14" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+<text x="62" y="146" font-size="21" font-weight="bold" fill="#1e1b4b">Adaptador de entrada</text>
+<text x="62" y="178" font-size="16" fill="#1e293b">Frontend React + Vite (checkout)</text>
+<text x="62" y="206" font-size="16" fill="#1e293b">POST /api/pedidos · JWT (cliente)</text>
+<text x="62" y="234" font-size="16" fill="#1e293b">OrderController.create()</text>
+<text x="62" y="272" font-size="14" fill="#64748b">server.js: composición e inyección</text>
+<text x="62" y="294" font-size="14" fill="#64748b">crearServicioNotificaciones(env)</text>
+<path d="M400,225 L520,225" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<polygon points="520,110 880,110 930,450 880,790 520,790 470,450" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="700" y="145" font-size="16" font-weight="bold" text-anchor="middle" fill="#64748b">NÚCLEO (sin dependencias externas)</text>
+<rect x="545" y="170" width="310" height="150" rx="12" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+<text x="565" y="202" font-size="14" font-weight="bold" fill="#4338ca">APLICACIÓN</text>
+<text x="565" y="230" font-size="20" font-weight="bold" fill="#1e1b4b">OrderService</text>
+<text x="565" y="258" font-size="15" fill="#1e293b">createOrder() → guarda pedido</text>
+<rect x="560" y="272" width="280" height="36" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+<text x="574" y="296" font-size="15" font-weight="bold" fill="#9a3412">notificarPedido() usa el puerto</text>
+<path d="M700,320 L700,420" stroke="#c2410c" stroke-width="2.5" marker-end="url(#a)"/>
+<text x="712" y="376" font-size="14" fill="#9a3412">usa</text>
+<rect x="545" y="425" width="310" height="190" rx="12" fill="#fff7ed" stroke="#c2410c" stroke-width="3"/>
+<text x="565" y="457" font-size="14" font-weight="bold" fill="#9a3412">«puerto de salida»</text>
+<text x="565" y="487" font-size="21" font-weight="bold" fill="#7c2d12">EmailServicePort</text>
+<text x="565" y="520" font-size="15" fill="#1e293b">+ enviarComprobantePedido()</text>
+<text x="565" y="546" font-size="15" fill="#1e293b">+ notificarNuevoPedidoAdmin()</text>
+<text x="565" y="584" font-size="14" fill="#64748b">→ { enviado, via, ... }</text>
+<rect x="545" y="650" width="310" height="100" rx="12" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="565" y="682" font-size="14" font-weight="bold" fill="#475569">DOMINIO</text>
+<text x="565" y="710" font-size="15" fill="#1e293b">Order · User · Product</text>
+<text x="565" y="734" font-size="14" fill="#64748b">(no conoce n8n ni SMTP)</text>
+<rect x="1000" y="110" width="560" height="170" rx="14" fill="#fff7ed" stroke="#c2410c" stroke-width="3"/>
+<text x="1022" y="142" font-size="14" font-weight="bold" fill="#9a3412">NUEVO · infrastructure/notifications</text>
+<text x="1022" y="174" font-size="21" font-weight="bold" fill="#7c2d12">EmailServiceConRespaldo</text>
+<text x="1022" y="204" font-size="15" fill="#1e293b">extends EmailServicePort · intenta el principal</text>
+<text x="1022" y="230" font-size="15" fill="#1e293b">y, si falla, usa el respaldo (el pedido no se pierde)</text>
+<text x="1022" y="258" font-size="14" fill="#64748b">activo con EMAIL_PROVIDER=n8n y N8N_RESPALDO ≠ none</text>
+<rect x="1000" y="330" width="560" height="150" rx="14" fill="#fff7ed" stroke="#c2410c" stroke-width="3"/>
+<text x="1022" y="362" font-size="14" font-weight="bold" fill="#9a3412">NUEVO · infrastructure/notifications</text>
+<text x="1022" y="394" font-size="21" font-weight="bold" fill="#7c2d12">N8nWebhookAdapter</text>
+<text x="1022" y="424" font-size="15" fill="#1e293b">POST JSON al webhook · header X-Webhook-Secret</text>
+<text x="1022" y="450" font-size="15" fill="#1e293b">timeout configurable (N8N_TIMEOUT_MS)</text>
+<rect x="1000" y="700" width="560" height="130" rx="14" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+<text x="1022" y="732" font-size="14" font-weight="bold" fill="#4338ca">EXISTENTE · infrastructure/email</text>
+<text x="1022" y="764" font-size="21" font-weight="bold" fill="#1e1b4b">NodemailerAdapter</text>
+<text x="1022" y="794" font-size="15" fill="#1e293b">envío directo SMTP (Ethereal / Mailtrap / SMTP real)</text>
+<path d="M1280,280 L1280,330" stroke="#c2410c" stroke-width="2.5" marker-end="url(#a)"/>
+<text x="1292" y="312" font-size="13" fill="#9a3412">principal</text>
+<path d="M1560,205 L1585,205 L1585,765 L1560,765" fill="none" stroke="#c2410c" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#a)"/>
+<text x="1440" y="305" font-size="13" fill="#9a3412" transform="rotate(90 1572 400)"></text>
+<path d="M1000,195 L860,480" fill="none" stroke="#c2410c" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#o)"/>
+<text x="905" y="300" font-size="14" font-weight="bold" fill="#9a3412">implementa</text>
+<path d="M1000,405 L860,520" fill="none" stroke="#c2410c" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#o)"/>
+<path d="M1000,765 L860,590" fill="none" stroke="#4338ca" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#o)"/>
+<rect x="1000" y="520" width="560" height="150" rx="14" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="1022" y="554" font-size="20" font-weight="bold" fill="#0f172a">n8n (localhost:5678)</text>
+<text x="1022" y="584" font-size="15" fill="#1e293b">Webhook → Validar secreto → ¿Para el cliente?</text>
+<text x="1022" y="610" font-size="15" fill="#1e293b">→ Correo al cliente / Correo al administrador</text>
+<text x="1022" y="636" font-size="15" fill="#1e293b">→ Telegram (opcional, desactivado)</text>
+<path d="M1400,480 L1400,520" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<text x="1412" y="505" font-size="13" fill="#475569">HTTP POST</text>
+<rect x="40" y="620" width="360" height="130" rx="14" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+<text x="62" y="654" font-size="18" font-weight="bold" fill="#7c2d12">Destinatarios</text>
+<text x="62" y="686" font-size="15" fill="#1e293b">Cliente: comprobante + datos de pago</text>
+<text x="62" y="712" font-size="15" fill="#1e293b">Administrador: aviso de nuevo pedido</text>
+
+<text x="40" y="880" font-size="13" fill="#64748b">Naranja: nuevo en esta actividad · Azul: existente · Línea punteada: implementa el puerto</text>
+</svg>
