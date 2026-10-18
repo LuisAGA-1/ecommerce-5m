@@ -1,11 +1,12 @@
 # Automatización con n8n
 
-[n8n](https://n8n.io) es una herramienta de automatización de flujos de trabajo de código abierto. Este proyecto la usa para dos cosas:
+[n8n](https://n8n.io) es una herramienta de automatización de flujos de trabajo de código abierto. Este proyecto la usa para tres cosas:
 
 | Flujo | Archivo | Qué hace |
 |---|---|---|
 | **Pedido creado** | `n8n/01-pedido-creado-notificaciones.json` | Recibe cada pedido nuevo desde el backend y envía el comprobante al cliente y el aviso al administrador. Incluye un nodo de Telegram opcional. |
 | **Reporte semanal** | `n8n/02-reporte-semanal.json` | Cada lunes a las 8:00 consulta `GET /api/reportes/dashboard` de la semana anterior y envía el resumen por correo al administrador. |
+| **Bot de Telegram** | `n8n/03-bot-telegram-consultas.json` | Responde comandos en Telegram (`/pedido 17`, `/stock laptop`) consultando PostgreSQL con un usuario de solo lectura. |
 
 ## Cómo encaja en la arquitectura hexagonal
 
@@ -131,6 +132,98 @@ curl -H "X-API-Key: TU_CLAVE" "http://localhost:3000/api/reportes/resumen"
 ```
 
 Luego, en n8n, abre el flujo **Reporte semanal** y presiona **Test workflow**.
+
+## Bot de Telegram (ngrok + PostgreSQL)
+
+```text
+Telegram ──HTTPS──> ngrok ──túnel──> agente ngrok ──> n8n :5678 ──TCP──> PostgreSQL :5432
+   ▲                                                    │
+   └──────────── Send Message (HTTPS saliente) ─────────┘
+```
+
+Flujo: **Telegram Trigger → Switch → Postgres → Telegram Send Message**.
+
+- El **Telegram Trigger** usa un webhook, así que Telegram necesita una **URL pública con HTTPS**. Como n8n corre en tu laptop, ngrok le da esa URL.
+- Por el túnel solo pasa el tráfico hacia n8n. **PostgreSQL nunca queda expuesto a internet.**
+- El bot entra a la base con `bot_lector`, un usuario que **solo puede leer** `pedidos` y `productos`.
+
+### 1. Crear el bot
+
+En Telegram, escríbele a **@BotFather** y mándale `/newbot`. Copia el **token** que te da y no lo subas a GitHub.
+
+### 2. Usuario de solo lectura
+
+Abre `n8n/bot-lector.sql`, cambia la contraseña y ejecútalo:
+
+```bash
+cd ~/webapp
+sudo -u postgres psql -d ecommerce_db -f n8n/bot-lector.sql
+```
+
+### 3. ngrok
+
+1. Instala ngrok (https://ngrok.com/download) y crea tu cuenta.
+2. Pega tu token: `ngrok config add-authtoken TU_AUTHTOKEN`.
+3. En el panel de ngrok, entra a **Domains** y reclama tu dominio gratis, por ejemplo `tu-dominio.ngrok-free.app`. Así la URL no cambia.
+4. En una terminal aparte, déjalo corriendo:
+
+   ```bash
+   ngrok http --url=tu-dominio.ngrok-free.app 5678
+   ```
+
+### 4. Arrancar n8n con la URL pública
+
+n8n necesita saber su URL pública para registrar el webhook en Telegram. Pásala en `N8N_URL_PUBLICA`, con `/` al final:
+
+```bash
+# Opción A (recomendada): la demo; n8n corre en WSL y llega a PostgreSQL por localhost
+N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ npm run demo
+
+# Opción B: Docker
+cd n8n && N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ docker compose up -d
+```
+
+Abre `https://tu-dominio.ngrok-free.app`. Si es la primera vez, crea tu cuenta de propietario con una **contraseña fuerte**: es la que protege tu n8n mientras el túnel está abierto.
+
+### 5. Credenciales en n8n
+
+En **Credentials → Add credential**:
+
+| Credencial | Campo | Valor |
+|---|---|---|
+| **Telegram API** | Access Token | el token de BotFather |
+| **Postgres** | Host | `localhost` (opción A) o `host.docker.internal` (opción B) |
+| | Database / Port | `ecommerce_db` / `5432` |
+| | User / Password | `bot_lector` / la contraseña del paso 2 |
+| | SSL | Disable |
+
+> Con la opción B, PostgreSQL debe aceptar conexiones desde Docker (`listen_addresses` y `pg_hba.conf`). Si no conecta, usa la opción A.
+
+### 6. Importar y activar
+
+1. **Workflows → Import from File** → `n8n/03-bot-telegram-consultas.json`.
+2. En **Telegram Trigger** y en los tres nodos **Responder…**, selecciona tu credencial de Telegram.
+3. En **Consultar pedido** y **Consultar stock**, selecciona la credencial Postgres de `bot_lector`.
+4. Activa el flujo con el switch **Active**. En ese momento n8n registra el webhook en Telegram con tu URL de ngrok.
+
+### 7. Probar
+
+| Le escribes al bot | Responde |
+|---|---|
+| `/pedido 17` o `/pedido PED-000017` | Folio, estado, total y fecha |
+| `/stock laptop` | Hasta 5 productos publicados con sus existencias y precio |
+| cualquier otra cosa (`/start`, `hola`) | La lista de comandos |
+
+**Si no responde:**
+- En la terminal de ngrok deben aparecer peticiones `POST /webhook/...`. Si no llega nada, revisa que n8n haya arrancado con `N8N_URL_PUBLICA`, y luego desactiva y vuelve a activar el flujo.
+- En n8n, **Executions** muestra en qué nodo falló.
+
+### Seguridad del bot
+
+- Las consultas usan **parámetros** (`$1`). El texto del usuario nunca se pega dentro del SQL, así que no hay inyección SQL.
+- `bot_lector` no puede modificar nada, aunque alguien tome el control del flujo.
+- Mientras ngrok esté abierto, cualquiera con la URL ve la pantalla de acceso de n8n. **Cierra ngrok (Ctrl+C) al terminar.**
+- Cualquiera que encuentre el bot puede consultar el estado de un pedido por su número. La consulta no devuelve datos personales, pero el bot es para demostración y no está pensado para clientes reales.
 
 ## Seguridad
 
