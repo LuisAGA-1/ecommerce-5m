@@ -279,7 +279,15 @@ async function main() {
       // Se ejecuta desde la carpeta n8n/ (sin .env) para que n8n no
       // lea el .env de la raíz del proyecto.
       cwd: path.join(RAIZ, "n8n"),
-      env: { GENERIC_TIMEZONE: "America/Mexico_City", N8N_DIAGNOSTICS_ENABLED: "false" }
+      env: {
+        GENERIC_TIMEZONE: "America/Mexico_City",
+        N8N_DIAGNOSTICS_ENABLED: "false",
+        // Bot de Telegram: N8N_URL_PUBLICA=https://xxx.ngrok-free.app/ npm run demo
+        ...(ENTORNO_TERMINAL.N8N_URL_PUBLICA && {
+          WEBHOOK_URL: ENTORNO_TERMINAL.N8N_URL_PUBLICA,
+          N8N_PROXY_HOPS: "1"
+        })
+      }
     });
   }
 

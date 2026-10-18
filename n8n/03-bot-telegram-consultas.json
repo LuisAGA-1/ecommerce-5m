@@ -1,0 +1,255 @@
+{
+  "name": "E-commerce 5M – Bot de consultas (Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Bot de consultas por Telegram\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\nComandos: `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`.\nCualquier otro texto responde la ayuda.\n\nNecesita una URL pública HTTPS (ngrok). Guía: `docs/N8N.md`, sección *Bot de Telegram*.\nUsa la credencial Postgres del usuario de solo lectura `bot_lector` (`n8n/bot-lector.sql`).",
+        "height": 260,
+        "width": 420
+      },
+      "id": "61f43571-85da-475d-a55e-c989ba5e5b68",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "de63a7bd-7c05-49da-a6e8-048335aed51d",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        100
+      ],
+      "webhookId": "ea1d3c03-4a05-480e-8389-864c8c4e7b1c"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "cdc8ef8b-19ad-4fbf-a806-0b508d2a8c78",
+                    "leftValue": "={{ ($json.message.text ?? '').trim() }}",
+                    "rightValue": "/pedido",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pedido"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "79e14075-f3d9-4658-9a14-87bdafa80ca1",
+                    "leftValue": "={{ ($json.message.text ?? '').trim() }}",
+                    "rightValue": "/stock",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "stock"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "ayuda"
+        }
+      },
+      "id": "196003e6-6ce5-4216-af49-5f97c5d67aba",
+      "name": "Switch comando",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, estado, total, fecha FROM pedidos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ parseInt((($json.message.text ?? '').trim().split(/\\s+/)[1] ?? '').replace(/\\D/g, '')) || 0 ] }}"
+        }
+      },
+      "id": "f0057d38-d1ea-4056-99b4-1f268757d47f",
+      "name": "Consultar pedido",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        500,
+        -60
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT string_agg(nombre || ': ' || stock || ' pzas, $' || precio, E'\\n') AS lista\nFROM (\n  SELECT nombre, stock, precio FROM productos\n  WHERE publicado = TRUE AND nombre ILIKE '%' || $1 || '%'\n  ORDER BY nombre LIMIT 5\n) t;",
+        "options": {
+          "queryReplacement": "={{ [ ($json.message.text ?? '').trim().split(/\\s+/).slice(1).join(' ') ] }}"
+        }
+      },
+      "id": "db369ce9-37e3-4c66-8ad9-1c30c3fcb902",
+      "name": "Consultar stock",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        500,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.id ? `📦 Pedido PED-${String($json.id).padStart(6, '0')}\\nEstado: ${$json.estado}\\nTotal: $${Number($json.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}\\nFecha: ${new Date($json.fecha).toLocaleDateString('es-MX')}` : 'No encontré ese pedido. Ejemplo: /pedido 17' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "10cc26d2-dbac-46c0-b25c-8127902b14e2",
+      "name": "Responder pedido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.lista ? `🛒 Productos encontrados:\\n${$json.lista}` : 'No encontré productos con ese nombre. Ejemplo: /stock laptop' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d6bd5d1f-ab4f-4f07-b5dc-31f7774a17c6",
+      "name": "Responder stock",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Hola 👋 Soy el bot de Tienda 5M.\n\nComandos:\n/pedido 17 → estado de un pedido\n/stock laptop → existencias de un producto",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "32b06575-a376-4af7-98a8-53bc4c8e9289",
+      "name": "Responder ayuda",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch comando": {
+      "main": [
+        [
+          {
+            "node": "Consultar pedido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Consultar stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar pedido": {
+      "main": [
+        [
+          {
+            "node": "Responder pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar stock": {
+      "main": [
+        [
+          {
+            "node": "Responder stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

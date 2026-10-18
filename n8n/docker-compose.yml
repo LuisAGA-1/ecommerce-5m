@@ -6,6 +6,10 @@
 #
 # Desde n8n, el backend que corre en WSL se alcanza como
 # http://host.docker.internal:3000
+#
+# Bot de Telegram: con ngrok abierto, arráncalo así para que
+# n8n registre el webhook con tu URL pública:
+#   N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ docker compose up -d
 # =========================================================
 services:
   n8n:
@@ -18,6 +22,8 @@ services:
       - GENERIC_TIMEZONE=America/Mexico_City
       - TZ=America/Mexico_City
       - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=${N8N_URL_PUBLICA:-http://localhost:5678/}
+      - N8N_PROXY_HOPS=1
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
