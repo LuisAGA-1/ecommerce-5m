@@ -165,23 +165,25 @@ sudo -u postgres psql -d ecommerce_db -f n8n/bot-lector.sql
 1. Instala ngrok (https://ngrok.com/download) y crea tu cuenta.
 2. Pega tu token: `ngrok config add-authtoken TU_AUTHTOKEN`.
 3. En el panel de ngrok, entra a **Domains** y reclama tu dominio gratis, por ejemplo `tu-dominio.ngrok-free.app`. Así la URL no cambia.
-4. En una terminal aparte, déjalo corriendo:
 
-   ```bash
-   ngrok http --url=tu-dominio.ngrok-free.app 5678
-   ```
+### 4. Arrancar todo con un solo comando
 
-### 4. Arrancar n8n con la URL pública
-
-n8n necesita saber su URL pública para registrar el webhook en Telegram. Pásala en `N8N_URL_PUBLICA`, con `/` al final:
+Agrega tu dominio de ngrok a `backend/.env` (solo una vez):
 
 ```bash
-# Opción A (recomendada): la demo; n8n corre en WSL y llega a PostgreSQL por localhost
-N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ npm run demo
-
-# Opción B: Docker
-cd n8n && N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ docker compose up -d
+NGROK_DOMAIN=tu-dominio.ngrok-free.app
 ```
+
+Desde ese momento, `npm run demo` levanta **PostgreSQL, backend, frontend, n8n y el túnel de ngrok**, y le pasa a n8n su URL pública para que registre el webhook de Telegram. Con Ctrl+C se apaga todo. Ya no hace falta abrir ngrok en otra terminal; si ya lo tienes abierto, la demo lo reutiliza.
+
+```bash
+cd ~/webapp
+npm run demo
+```
+
+Al final debe aparecer `n8n público (bot)   https://tu-dominio...   ✔ listo`.
+
+> **Docker:** `cd n8n && N8N_URL_PUBLICA=https://tu-dominio.ngrok-free.app/ docker compose up -d`, y abre ngrok aparte con `ngrok http --url=tu-dominio.ngrok-free.app 5678`.
 
 Abre `https://tu-dominio.ngrok-free.app`. Si es la primera vez, crea tu cuenta de propietario con una **contraseña fuerte**: es la que protege tu n8n mientras el túnel está abierto.
 
@@ -215,14 +217,14 @@ En **Credentials → Add credential**:
 | cualquier otra cosa (`/start`, `hola`) | La lista de comandos |
 
 **Si no responde:**
-- En la terminal de ngrok deben aparecer peticiones `POST /webhook/...`. Si no llega nada, revisa que n8n haya arrancado con `N8N_URL_PUBLICA`, y luego desactiva y vuelve a activar el flujo.
+- En la terminal de ngrok deben aparecer peticiones `POST /webhook/...`. Si no llega nada, revisa que `NGROK_DOMAIN` esté en `backend/.env`, y luego desactiva y vuelve a activar el flujo.
 - En n8n, **Executions** muestra en qué nodo falló.
 
 ### Seguridad del bot
 
 - Las consultas usan **parámetros** (`$1`). El texto del usuario nunca se pega dentro del SQL, así que no hay inyección SQL.
 - `bot_lector` no puede modificar nada, aunque alguien tome el control del flujo.
-- Mientras ngrok esté abierto, cualquiera con la URL ve la pantalla de acceso de n8n. **Cierra ngrok (Ctrl+C) al terminar.**
+- Mientras la demo esté encendida, cualquiera con la URL ve la pantalla de acceso de n8n. **Apágala (Ctrl+C) al terminar.**
 - Cualquiera que encuentre el bot puede consultar el estado de un pedido por su número. La consulta no devuelve datos personales, pero el bot es para demostración y no está pensado para clientes reales.
 
 ## Seguridad

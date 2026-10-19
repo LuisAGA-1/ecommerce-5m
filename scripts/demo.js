@@ -3,6 +3,7 @@
 // DEMO CON UN SOLO COMANDO
 //
 //   npm run demo                  -> PostgreSQL + backend + frontend + n8n
+//                                    (+ ngrok si NGROK_DOMAIN está en backend/.env)
 //   npm run demo -- --sin-n8n     -> sin n8n
 //   npm run demo -- --sin-navegador
 //   npm run demo:detener          -> libera los puertos 3000, 5173 y 5678
@@ -35,10 +36,16 @@ const DB_PORT = Number(process.env.DB_PORT || 5432);
 const CON_N8N = !ARGS.has("--sin-n8n");
 const ABRIR_NAVEGADOR = !ARGS.has("--sin-navegador");
 
+// Bot de Telegram: URL pública de n8n. NGROK_DOMAIN (backend/.env) hace que
+// la demo abra también el túnel; N8N_URL_PUBLICA (terminal) sirve si el túnel
+// ya lo abriste aparte.
+const NGROK_DOMAIN = (process.env.NGROK_DOMAIN || "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+const URL_PUBLICA = ENTORNO_TERMINAL.N8N_URL_PUBLICA || (NGROK_DOMAIN && `https://${NGROK_DOMAIN}/`);
+
 // ---------------------------------------------------------
 // Utilidades de consola
 // ---------------------------------------------------------
-const COLOR = { back: 36, front: 35, n8n: 33, demo: 32, error: 31, gris: 90 };
+const COLOR = { back: 36, front: 35, n8n: 33, ngrok: 34, demo: 32, error: 31, gris: 90 };
 const pintar = (codigo, texto) => `\x1b[${codigo}m${texto}\x1b[0m`;
 const log = (msg) => console.log(`${pintar(COLOR.demo, "[demo]")} ${msg}`);
 const error = (msg) => console.error(`${pintar(COLOR.error, "[demo]")} ${msg}`);
@@ -184,7 +191,7 @@ function apagarTodo(codigo = 0) {
   if (apagando) return;
   apagando = true;
   console.log("");
-  log("Apagando backend, frontend y n8n…");
+  log("Apagando backend, frontend, n8n y ngrok…");
   for (const h of hijos) {
     try { process.kill(-h.pid, "SIGTERM"); } catch { /* ya terminó */ }
   }
@@ -282,13 +289,25 @@ async function main() {
       env: {
         GENERIC_TIMEZONE: "America/Mexico_City",
         N8N_DIAGNOSTICS_ENABLED: "false",
-        // Bot de Telegram: N8N_URL_PUBLICA=https://xxx.ngrok-free.app/ npm run demo
-        ...(ENTORNO_TERMINAL.N8N_URL_PUBLICA && {
-          WEBHOOK_URL: ENTORNO_TERMINAL.N8N_URL_PUBLICA,
-          N8N_PROXY_HOPS: "1"
-        })
+        // Con URL pública, n8n registra el webhook de Telegram con ella
+        ...(URL_PUBLICA && { WEBHOOK_URL: URL_PUBLICA, N8N_PROXY_HOPS: "1" })
       }
     });
+  }
+
+  let conNgrok = false;
+  if (CON_N8N && NGROK_DOMAIN) {
+    if (await respondeHttp("http://127.0.0.1:4040/api/tunnels")) {
+      // El plan gratis solo permite un agente: no abrir un segundo
+      log("ngrok ya está abierto en otra terminal; se reutiliza.");
+      conNgrok = true;
+    } else if (spawnSync("ngrok", ["version"], { stdio: "ignore" }).error) {
+      error("NGROK_DOMAIN está en backend/.env pero ngrok no está instalado; sigo sin túnel (ver docs/N8N.md).");
+    } else {
+      log(`Abriendo el túnel https://${NGROK_DOMAIN} → n8n…`);
+      lanzar("ngrok", COLOR.ngrok, "ngrok", ["http", `--url=${NGROK_DOMAIN}`, String(PUERTO_N8N), "--log=stdout", "--log-level=warn"]);
+      conNgrok = true;
+    }
   }
 
   const [okBack, okFront] = await Promise.all([
@@ -297,6 +316,10 @@ async function main() {
   ]);
   const okN8n = CON_N8N
     ? await esperarHttp("n8n", `http://localhost:${PUERTO_N8N}/healthz`, 300)
+    : null;
+  // De punta a punta: internet → ngrok → n8n
+  const okNgrok = conNgrok && okN8n
+    ? await esperarHttp("El túnel de ngrok", `https://${NGROK_DOMAIN}/healthz`, 30)
     : null;
 
   const estado = (ok) => (ok ? pintar(32, "✔ listo") : pintar(31, "✘ revisar"));
@@ -307,6 +330,7 @@ async function main() {
   console.log(`  Tienda (frontend)   http://localhost:${PUERTO_FRONT}    ${estado(okFront)}`);
   console.log(`  API (backend)       http://localhost:${PUERTO_BACK}    ${estado(okBack)}`);
   if (CON_N8N) console.log(`  n8n                 http://localhost:${PUERTO_N8N}    ${estado(okN8n)}`);
+  if (conNgrok) console.log(`  n8n público (bot)   https://${NGROK_DOMAIN}    ${estado(okNgrok)}`);
   console.log(`  Correos de prueba   https://ethereal.email/messages`);
   console.log(pintar(COLOR.gris, "\n  Ctrl+C para apagar todo.\n"));
 
