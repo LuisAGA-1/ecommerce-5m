@@ -6,7 +6,7 @@
 |---|---|---|
 | **Pedido creado** | `n8n/01-pedido-creado-notificaciones.json` | Recibe cada pedido nuevo desde el backend y envía el comprobante al cliente y el aviso al administrador. Incluye un nodo de Telegram opcional. |
 | **Reporte semanal** | `n8n/02-reporte-semanal.json` | Cada lunes a las 8:00 consulta `GET /api/reportes/dashboard` de la semana anterior y envía el resumen por correo al administrador. |
-| **Bot de Telegram** | `n8n/03-bot-telegram-consultas.json` | Responde comandos en Telegram (`/pedido 17`, `/stock laptop`) consultando PostgreSQL con un usuario de solo lectura. |
+| **Bot de Telegram** | `n8n/03-bot-telegram-consultas.json` | Registra en PostgreSQL a quien manda `/start` y le da la bienvenida; responde `/pedido 17` y `/stock laptop`. |
 
 ## Cómo encaja en la arquitectura hexagonal
 
@@ -143,22 +143,34 @@ Telegram ──HTTPS──> ngrok ──túnel──> agente ngrok ──> n8n :
 
 Flujo: **Telegram Trigger → Switch → Postgres → Telegram Send Message**.
 
+| Salida del Switch | Nodo Postgres | Respuesta |
+|---|---|---|
+| mensaje empieza con `/start` | **Registrar usuario**: `INSERT` en `telegram_usuarios` (si ya existe, actualiza sus datos) | Mensaje de bienvenida |
+| `/pedido` | Consultar pedido (`SELECT`) | Estado del pedido |
+| `/stock` | Consultar stock (`SELECT`) | Existencias |
+| *default* (cualquier otro texto) | — | Lista de comandos |
+
+> El diagrama del curso usa **MySQL :3306**; este proyecto usa **PostgreSQL :5432**, así que el nodo es *Postgres* en lugar de *MySQL*. El flujo es el mismo.
+
 - El **Telegram Trigger** usa un webhook, así que Telegram necesita una **URL pública con HTTPS**. Como n8n corre en tu laptop, ngrok le da esa URL.
 - Por el túnel solo pasa el tráfico hacia n8n. **PostgreSQL nunca queda expuesto a internet.**
-- El bot entra a la base con `bot_lector`, un usuario que **solo puede leer** `pedidos` y `productos`.
+- El bot entra a la base con `bot_lector`, un usuario que **solo puede leer** `pedidos` y `productos`, y solo puede escribir en `telegram_usuarios`.
 
 ### 1. Crear el bot
 
 En Telegram, escríbele a **@BotFather** y mándale `/newbot`. Copia el **token** que te da y no lo subas a GitHub.
 
-### 2. Usuario de solo lectura
+### 2. Usuario del bot y tabla de usuarios
 
-Abre `n8n/bot-lector.sql`, cambia la contraseña y ejecútalo:
+Abre `n8n/bot-lector.sql`, cambia la contraseña y ejecuta los dos archivos (el segundo crea la tabla `telegram_usuarios`):
 
 ```bash
 cd ~/webapp
 sudo -u postgres psql -d ecommerce_db -f n8n/bot-lector.sql
+sudo -u postgres psql -d ecommerce_db -f n8n/bot-usuarios-telegram.sql
 ```
+
+Si ya habías corrido `bot-lector.sql` antes, solo corre el segundo.
 
 ### 3. ngrok
 
@@ -212,9 +224,10 @@ En **Credentials → Add credential**:
 
 | Le escribes al bot | Responde |
 |---|---|
+| `/start` | Bienvenida; queda registrado en `telegram_usuarios` |
 | `/pedido 17` o `/pedido PED-000017` | Folio, estado, total y fecha |
 | `/stock laptop` | Hasta 5 productos publicados con sus existencias y precio |
-| cualquier otra cosa (`/start`, `hola`) | La lista de comandos |
+| cualquier otra cosa (`hola`) | La lista de comandos |
 
 **Si no responde:**
 - En la terminal de ngrok deben aparecer peticiones `POST /webhook/...`. Si no llega nada, revisa que `NGROK_DOMAIN` esté en `backend/.env`, y luego desactiva y vuelve a activar el flujo.
@@ -223,7 +236,7 @@ En **Credentials → Add credential**:
 ### Seguridad del bot
 
 - Las consultas usan **parámetros** (`$1`). El texto del usuario nunca se pega dentro del SQL, así que no hay inyección SQL.
-- `bot_lector` no puede modificar nada, aunque alguien tome el control del flujo.
+- `bot_lector` no puede modificar la tienda aunque alguien tome el control del flujo; solo escribe en `telegram_usuarios`.
 - Mientras la demo esté encendida, cualquiera con la URL ve la pantalla de acceso de n8n. **Apágala (Ctrl+C) al terminar.**
 - Cualquiera que encuentre el bot puede consultar el estado de un pedido por su número. La consulta no devuelve datos personales, pero el bot es para demostración y no está pensado para clientes reales.
 

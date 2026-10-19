@@ -3,8 +3,8 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Bot de consultas por Telegram\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\nComandos: `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`.\nCualquier otro texto responde la ayuda.\n\nNecesita una URL pública HTTPS (ngrok). Guía: `docs/N8N.md`, sección *Bot de Telegram*.\nUsa la credencial Postgres del usuario de solo lectura `bot_lector` (`n8n/bot-lector.sql`).",
-        "height": 260,
+        "content": "## Bot de Telegram (n8n + ngrok + PostgreSQL)\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\n- `/start`: registra al usuario en `telegram_usuarios` y le da la bienvenida.\n- `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`: consultas de solo lectura.\n- Cualquier otro texto (salida *default*): la ayuda.\n\nGuía: `docs/N8N.md`, sección *Bot de Telegram*. SQL: `n8n/bot-lector.sql` y `n8n/bot-usuarios-telegram.sql`.",
+        "height": 320,
         "width": 420
       },
       "id": "61f43571-85da-475d-a55e-c989ba5e5b68",
@@ -13,7 +13,7 @@
       "typeVersion": 1,
       "position": [
         -460,
-        -200
+        -260
       ]
     },
     {
@@ -37,6 +37,29 @@
       "parameters": {
         "rules": {
           "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "8fe68cc3-2b35-42aa-944f-4553bad0ef22",
+                    "leftValue": "={{ ($json.message.text ?? '').trim() }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
             {
               "conditions": {
                 "options": {
@@ -96,7 +119,7 @@
       "typeVersion": 3,
       "position": [
         240,
-        100
+        160
       ]
     },
     {
@@ -184,6 +207,40 @@
         500,
         300
       ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO telegram_usuarios (chat_id, username, nombre, apellido, idioma)\nVALUES ($1::bigint, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))\nON CONFLICT (chat_id) DO UPDATE SET\n  username = EXCLUDED.username, nombre = EXCLUDED.nombre,\n  apellido = EXCLUDED.apellido, idioma = EXCLUDED.idioma, ultimo_start = NOW()\nRETURNING chat_id, (xmax = 0) AS nuevo;",
+        "options": {
+          "queryReplacement": "={{ [ String($json.message.chat.id), $json.message.from.username ?? '', $json.message.from.first_name ?? '', $json.message.from.last_name ?? '', $json.message.from.language_code ?? '' ] }}"
+        }
+      },
+      "id": "1fa6b4d5-1e0c-412c-bf49-98c4b187b875",
+      "name": "Registrar usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        500,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').item.json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "6d5e0613-4143-44ea-ac6d-616fd8c45000",
+      "name": "Mensaje de bienvenida",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        -220
+      ]
     }
   ],
   "connections": {
@@ -200,6 +257,13 @@
     },
     "Switch comando": {
       "main": [
+        [
+          {
+            "node": "Registrar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Consultar pedido",
@@ -239,6 +303,17 @@
         [
           {
             "node": "Responder stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar usuario": {
+      "main": [
+        [
+          {
+            "node": "Mensaje de bienvenida",
             "type": "main",
             "index": 0
           }
