@@ -435,6 +435,6 @@ El proyecto se integra con [n8n](https://n8n.io) sin modificar el núcleo:
 
 - **Notificaciones de pedidos:** `N8nWebhookAdapter` es otra implementación del puerto `EmailServicePort`. Con `EMAIL_PROVIDER=n8n`, cada pedido nuevo se publica en un webhook de n8n y n8n envía los correos (u otros canales, como Telegram). Si n8n no responde, se usa Nodemailer como respaldo.
 - **Reporte semanal:** cada lunes, un flujo de n8n consulta `/api/reportes/dashboard` con el header `X-API-Key` y manda el resumen de ventas al administrador.
-- **Bot de Telegram:** responde `/pedido` y `/stock` consultando PostgreSQL con un usuario de solo lectura. Usa ngrok para que Telegram llegue al n8n local.
+- **Bot de Telegram:** con `/start` registra al usuario en PostgreSQL y le da la bienvenida; responde `/pedido` y `/stock` con consultas de solo lectura. Usa ngrok para que Telegram llegue al n8n local.
 
 Los flujos para importar están en [`n8n/`](n8n/) y la guía paso a paso en [`docs/N8N.md`](docs/N8N.md).
