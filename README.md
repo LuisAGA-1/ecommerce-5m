@@ -22,7 +22,7 @@ Este comando:
 
 | Comando | Uso |
 |---|---|
-| `npm run demo` | Todo: PostgreSQL + backend + frontend + n8n |
+| `npm run demo` | Todo: PostgreSQL + backend + frontend + n8n (+ túnel de ngrok para el bot si `NGROK_DOMAIN` está en `backend/.env`) |
 | `npm run demo -- --sin-n8n` | Sin n8n (más rápido; usa `EMAIL_PROVIDER=ethereal` en `backend/.env`) |
 | `npm run demo -- --sin-navegador` | No abre el navegador automáticamente |
 | `npm run demo:detener` | Libera los puertos 3000, 5173 y 5678 si quedó algo encendido |
