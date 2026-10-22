@@ -159,7 +159,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.id ? `📦 Pedido PED-${String($json.id).padStart(6, '0')}\\nEstado: ${$json.estado}\\nTotal: $${Number($json.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}\\nFecha: ${new Date($json.fecha).toLocaleDateString('es-MX')}` : 'No encontré ese pedido. Ejemplo: /pedido 17' }}",
         "additionalFields": {
           "appendAttribution": false
@@ -176,7 +176,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.lista ? `🛒 Productos encontrados:\\n${$json.lista}` : 'No encontré productos con ese nombre. Ejemplo: /stock laptop' }}",
         "additionalFields": {
           "appendAttribution": false
@@ -210,8 +210,8 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').item.json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').first().json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -316,7 +316,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.output }}",
         "additionalFields": {
           "appendAttribution": false
