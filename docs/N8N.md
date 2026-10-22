@@ -6,7 +6,7 @@
 |---|---|---|
 | **Pedido creado** | `n8n/01-pedido-creado-notificaciones.json` | Recibe cada pedido nuevo desde el backend y envía el comprobante al cliente y el aviso al administrador. Incluye un nodo de Telegram opcional. |
 | **Reporte semanal** | `n8n/02-reporte-semanal.json` | Cada lunes a las 8:00 consulta `GET /api/reportes/dashboard` de la semana anterior y envía el resumen por correo al administrador. |
-| **Bot de Telegram** | `n8n/03-bot-telegram-consultas.json` | Registra en PostgreSQL a quien manda `/start` y le da la bienvenida; responde `/pedido 17` y `/stock laptop`. |
+| **Bot de Telegram** | `n8n/03-bot-telegram-consultas.json` | Registra en PostgreSQL a quien manda `/start` y le da la bienvenida; responde `/pedido 17` y `/stock laptop`; cualquier otro texto lo contesta un asistente con IA (Gemini). |
 
 ## Cómo encaja en la arquitectura hexagonal
 
@@ -148,7 +148,7 @@ Flujo: **Telegram Trigger → Switch → Postgres → Telegram Send Message**.
 | mensaje empieza con `/start` | **Registrar usuario**: `INSERT` en `telegram_usuarios` (si ya existe, actualiza sus datos) | Mensaje de bienvenida |
 | `/pedido` | Consultar pedido (`SELECT`) | Estado del pedido |
 | `/stock` | Consultar stock (`SELECT`) | Existencias |
-| *default* (cualquier otro texto) | — | Lista de comandos |
+| *default* (cualquier otro texto) | **Asistente IA** (Gemini) con dos herramientas de solo lectura: `buscar_productos` y `consultar_pedido` | Respuesta en lenguaje natural |
 
 > El diagrama del curso usa **MySQL :3306**; este proyecto usa **PostgreSQL :5432**, así que el nodo es *Postgres* en lugar de *MySQL*. El flujo es el mismo.
 
@@ -210,15 +210,17 @@ En **Credentials → Add credential**:
 | | Database / Port | `ecommerce_db` / `5432` |
 | | User / Password | `bot_lector` / la contraseña del paso 2 |
 | | SSL | Disable |
+| **Google Gemini (PaLM) API** | API Key | tu clave gratis de https://aistudio.google.com/apikey |
 
 > Con la opción B, PostgreSQL debe aceptar conexiones desde Docker (`listen_addresses` y `pg_hba.conf`). Si no conecta, usa la opción A.
 
 ### 6. Importar y activar
 
-1. **Workflows → Import from File** → `n8n/03-bot-telegram-consultas.json`.
-2. En **Telegram Trigger** y en los tres nodos **Responder…**, selecciona tu credencial de Telegram.
-3. En **Consultar pedido** y **Consultar stock**, selecciona la credencial Postgres de `bot_lector`.
-4. Activa el flujo con el switch **Active**. En ese momento n8n registra el webhook en Telegram con tu URL de ngrok.
+1. **Workflows → Import from File** → `n8n/03-bot-telegram-consultas.json` (o **Import from URL** con el enlace *raw* de GitHub).
+2. **Telegram:** en **Telegram Trigger**, **Mensaje de bienvenida**, **Responder pedido**, **Responder stock** y **Responder asistente**.
+3. **Postgres (`bot_lector`):** en **Registrar usuario**, **Consultar pedido**, **Consultar stock**, **buscar_productos** y **consultar_pedido**.
+4. **Google Gemini:** en **Google Gemini Chat Model**. La **Memoria del chat** no lleva credencial.
+5. Activa el flujo con el switch **Active** (o **Publish**). En ese momento n8n registra el webhook en Telegram con tu URL de ngrok.
 
 ### 7. Probar
 
@@ -227,7 +229,9 @@ En **Credentials → Add credential**:
 | `/start` | Bienvenida; queda registrado en `telegram_usuarios` |
 | `/pedido 17` o `/pedido PED-000017` | Folio, estado, total y fecha |
 | `/stock laptop` | Hasta 5 productos publicados con sus existencias y precio |
-| cualquier otra cosa (`hola`) | La lista de comandos |
+| `¿tienen audífonos?`, `¿cuánto cuesta el mouse?` | El asistente busca en la base y contesta |
+| `¿cómo va mi pedido 17?` | El asistente consulta el pedido |
+| `hola` | Saludo y los comandos disponibles |
 
 **Si no responde:**
 - En la terminal de ngrok deben aparecer peticiones `POST /webhook/...`. Si no llega nada, revisa que `NGROK_DOMAIN` esté en `backend/.env`, y luego desactiva y vuelve a activar el flujo.
@@ -237,6 +241,7 @@ En **Credentials → Add credential**:
 
 - Las consultas usan **parámetros** (`$1`). El texto del usuario nunca se pega dentro del SQL, así que no hay inyección SQL.
 - `bot_lector` no puede modificar la tienda aunque alguien tome el control del flujo; solo escribe en `telegram_usuarios`.
+- **Asistente IA:** la IA no escribe SQL. Solo puede llamar dos consultas fijas de lectura y elegir sus parámetros. Los mensajes que caen en el asistente se envían a Google (Gemini), así que no escribas datos personales.
 - Mientras la demo esté encendida, cualquiera con la URL ve la pantalla de acceso de n8n. **Apágala (Ctrl+C) al terminar.**
 - Cualquiera que encuentre el bot puede consultar el estado de un pedido por su número. La consulta no devuelve datos personales, pero el bot es para demostración y no está pensado para clientes reales.
 
