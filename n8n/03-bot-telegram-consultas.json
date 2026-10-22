@@ -264,7 +264,7 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "sessionKey": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "contextWindowLength": 6
       },
       "id": "27f94729-2a39-4079-ad2a-29098c5ae9d2",
