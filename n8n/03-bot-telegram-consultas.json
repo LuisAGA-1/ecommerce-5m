@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Bot de Telegram (n8n + ngrok + PostgreSQL)\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\n- `/start`: registra al usuario en `telegram_usuarios` y le da la bienvenida.\n- `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`: consultas de solo lectura.\n- Cualquier otro texto (salida *default*): la ayuda.\n\nGuía: `docs/N8N.md`, sección *Bot de Telegram*. SQL: `n8n/bot-lector.sql` y `n8n/bot-usuarios-telegram.sql`.",
+        "content": "## Bot de Telegram (n8n + ngrok + PostgreSQL)\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\n- `/start`: registra al usuario en `telegram_usuarios` y le da la bienvenida.\n- `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`: consultas de solo lectura.\n- Cualquier otro texto (salida *default*): **Asistente IA** (Gemini) que consulta productos y pedidos en solo lectura.\n\nGuía: `docs/N8N.md`, sección *Bot de Telegram*. SQL: `n8n/bot-lector.sql` y `n8n/bot-usuarios-telegram.sql`.",
         "height": 320,
         "width": 420
       },
@@ -110,7 +110,7 @@
         },
         "options": {
           "fallbackOutput": "extra",
-          "renameFallbackOutput": "ayuda"
+          "renameFallbackOutput": "default"
         }
       },
       "id": "196003e6-6ce5-4216-af49-5f97c5d67aba",
@@ -193,23 +193,6 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "Hola 👋 Soy el bot de Tienda 5M.\n\nComandos:\n/pedido 17 → estado de un pedido\n/stock laptop → existencias de un producto",
-        "additionalFields": {
-          "appendAttribution": false
-        }
-      },
-      "id": "32b06575-a376-4af7-98a8-53bc4c8e9289",
-      "name": "Responder ayuda",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        500,
-        300
-      ]
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO telegram_usuarios (chat_id, username, nombre, apellido, idioma)\nVALUES ($1::bigint, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))\nON CONFLICT (chat_id) DO UPDATE SET\n  username = EXCLUDED.username, nombre = EXCLUDED.nombre,\n  apellido = EXCLUDED.apellido, idioma = EXCLUDED.idioma, ultimo_start = NOW()\nRETURNING chat_id, (xmax = 0) AS nuevo;",
         "options": {
@@ -240,6 +223,109 @@
       "position": [
         760,
         -220
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text || 'El usuario mandó algo que no es texto (sticker, foto o audio).' }}",
+        "options": {
+          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE la herramienta buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Al final, si ayuda, recuerda los comandos: /start, /pedido 17, /stock laptop."
+        }
+      },
+      "id": "d3d1d4a9-1c08-42cf-b20a-98568363ae97",
+      "name": "Asistente IA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "6187323e-01ff-4f15-a137-4a0ec6e1a9e2",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        340,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 6
+      },
+      "id": "27f94729-2a39-4079-ad2a-29098c5ae9d2",
+      "name": "Memoria del chat",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Busca productos publicados de la tienda por parte de su nombre. Devuelve nombre, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
+        "operation": "executeQuery",
+        "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE AND nombre ILIKE '%' || $1 || '%'\nORDER BY nombre LIMIT 10;",
+        "options": {
+          "queryReplacement": "={{ [ $fromAI('texto', 'Parte del nombre del producto, por ejemplo laptop; vacío para listar', 'string') ] }}"
+        }
+      },
+      "id": "3e07d4b9-c636-4300-a48c-eed4965d6db9",
+      "name": "buscar_productos",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        700,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Consulta un pedido por su número (el 17 de PED-000017). Devuelve estado, total (MXN) y fecha; vacío si no existe.",
+        "operation": "executeQuery",
+        "query": "SELECT id, estado, total, fecha FROM pedidos WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $fromAI('numero', 'Número del pedido, solo dígitos', 'number') ] }}"
+        }
+      },
+      "id": "1c6afe76-4181-4a67-b450-42709e574c38",
+      "name": "consultar_pedido",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "06e1db60-9aba-49b5-8ea7-97b25307cc5d",
+      "name": "Responder asistente",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        860,
+        320
       ]
     }
   ],
@@ -280,7 +366,7 @@
         ],
         [
           {
-            "node": "Responder ayuda",
+            "node": "Asistente IA",
             "type": "main",
             "index": 0
           }
@@ -315,6 +401,61 @@
           {
             "node": "Mensaje de bienvenida",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente IA": {
+      "main": [
+        [
+          {
+            "node": "Responder asistente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria del chat": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_productos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_tool",
             "index": 0
           }
         ]
