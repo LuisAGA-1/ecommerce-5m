@@ -2,24 +2,22 @@
 // Para cambiar de giro edita este archivo (y la lista de categorías en
 // backend/src/domain/entities/Product.js).
 export const TIENDA = {
-  nombre: "paso",
-  sufijo: "urbano",
-  logoCorto: "pu",
-  nombreCompleto: "Paso Urbano",
-  acento: "#ff5a1f",
-  sombraAcento: "rgba(255, 90, 31, 0.34)",
-  fondo: "#f4f2ef",
-  buscador: "¿Qué tenis o prenda buscas?",
+  nombre: "rock",
+  sufijo: "zone",
+  logoCorto: "rz",
+  nombreCompleto: "RockZone",
+  acento: "#e0262f",
+  sombraAcento: "rgba(224, 38, 47, 0.34)",
+  fondo: "#f1f1f0",
+  buscador: "¿Qué instrumento o equipo buscas?",
   // Categoría → ícono (en el orden en que se muestran)
   categorias: {
-    Tenis: "👟",
-    Playeras: "👕",
-    Sudaderas: "🧥",
-    Gorras: "🧢",
-    Mochilas: "🎒",
-    Calcetines: "🧦",
-    Accesorios: "🕶️",
-    Otros: "📦"
+    "Instrumentos": "🎸",
+    "Insumos y refacciones": "🔧",
+    "Efectos y accesorios": "🎛️",
+    "Amplificación y sonido": "🔊",
+    "Equipo para bandas": "🥁",
+    "Otros": "📦"
   }
 };
 

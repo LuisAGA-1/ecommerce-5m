@@ -319,7 +319,7 @@ function ClientModule({
       (!categoriaActiva ||
         (producto.categoria || "Otros") === categoriaActiva) &&
       normalizar(
-        `${producto.nombre} ${producto.descripcion}`
+        `${producto.nombre} ${producto.descripcion} ${producto.categoria}`
       ).includes(normalizar(busqueda.trim()))
     );
 

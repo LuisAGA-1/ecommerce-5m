@@ -1,12 +1,10 @@
 // Si cambias la lista, cámbiala también en frontend/src/tienda.js
 const CATEGORIAS = [
-  "Tenis",
-  "Playeras",
-  "Sudaderas",
-  "Gorras",
-  "Mochilas",
-  "Calcetines",
-  "Accesorios",
+  "Instrumentos",
+  "Insumos y refacciones",
+  "Efectos y accesorios",
+  "Amplificación y sonido",
+  "Equipo para bandas",
   "Otros"
 ];
 
