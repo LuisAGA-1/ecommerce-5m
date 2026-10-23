@@ -230,7 +230,7 @@
         "promptType": "define",
         "text": "={{ $json.message.text || 'El usuario mandó algo que no es texto (sticker, foto o audio).' }}",
         "options": {
-          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, salvo listas de productos; sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE la herramienta buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Si piden ver un tipo de producto (por ejemplo \"muéstrame las laptops\"), responde SOLO con la lista, una línea por producto: Nombre – $precio MXN – N en stock. Sin saludo, sin introducción y sin texto al final.\n- En esa lista incluye solo productos de ese tipo: si piden laptops, no pongas fundas, cargadores ni otros accesorios. Si no hay, responde solo: No encontré productos de ese tipo.\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Recuerda los comandos (/start, /pedido 17, /stock laptop) solo si el usuario parece perdido."
+          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, salvo listas de productos; sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE las herramientas productos_por_categoria o buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Si piden ver un tipo de producto (por ejemplo \"muéstrame las laptops\"), usa productos_por_categoria con la categoría que corresponda (Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes u Otros) y responde SOLO con la lista, una línea por producto: Nombre – $precio MXN – N en stock. Sin saludo, sin introducción y sin texto al final.\n- Si la categoría no tiene productos, responde solo: No encontré productos de esa categoría. Para un producto o marca concreta usa buscar_productos.\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Recuerda los comandos (/start, /pedido 17, /stock laptop) solo si el usuario parece perdido."
         }
       },
       "id": "d3d1d4a9-1c08-42cf-b20a-98568363ae97",
@@ -279,9 +279,9 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Busca productos publicados de la tienda por su nombre. Pasa UNA palabra del tipo de producto (laptop, mouse, monitor); el plural se quita solo. Devuelve nombre, precio (MXN) y existencias de hasta 10 productos, primero los que empiezan con esa palabra. Manda texto vacío para listar algunos.",
+        "toolDescription": "Busca productos publicados por su nombre, para preguntas de un producto o marca concreta (Lenovo, iPhone). Pasa UNA palabra; el plural se quita solo. Devuelve nombre, categoría, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
         "operation": "executeQuery",
-        "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE\n  AND nombre ILIKE '%' || regexp_replace(trim($1), '(es|s)$', '', 'i') || '%'\nORDER BY nombre ILIKE regexp_replace(trim($1), '(es|s)$', '', 'i') || '%' DESC, nombre\nLIMIT 10;",
+        "query": "SELECT nombre, categoria, precio, stock FROM productos\nWHERE publicado = TRUE\n  AND nombre ILIKE '%' || regexp_replace(trim($1), '(es|s)$', '', 'i') || '%'\nORDER BY nombre ILIKE regexp_replace(trim($1), '(es|s)$', '', 'i') || '%' DESC, nombre\nLIMIT 10;",
         "options": {
           "queryReplacement": "={{ [ $fromAI('texto', 'Una palabra del tipo de producto, por ejemplo laptop; vacío para listar', 'string') ] }}"
         }
@@ -311,6 +311,25 @@
       "typeVersion": 2.6,
       "position": [
         880,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lista los productos publicados de UNA categoría. Categorías válidas: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros. Devuelve nombre, precio (MXN) y existencias de hasta 20 productos.",
+        "operation": "executeQuery",
+        "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE AND categoria ILIKE $1\nORDER BY nombre\nLIMIT 20;",
+        "options": {
+          "queryReplacement": "={{ [ $fromAI('categoria', 'Una de: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros', 'string') ] }}"
+        }
+      },
+      "id": "4adf59f4-233b-4ea2-9a92-c6bb8d14262a",
+      "name": "productos_por_categoria",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1060,
         560
       ]
     },
@@ -454,6 +473,17 @@
       ]
     },
     "consultar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "productos_por_categoria": {
       "ai_tool": [
         [
           {

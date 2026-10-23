@@ -16,6 +16,7 @@ class ProductService {
     precio,
     stock,
     imagenUrl,
+    categoria,
     proveedorId,
     rol
   }) {
@@ -42,7 +43,8 @@ class ProductService {
       descripcion,
       precio,
       stock,
-      imagenUrl
+      imagenUrl,
+      categoria
     });
 
     if (proveedorId) {
@@ -121,7 +123,8 @@ class ProductService {
       descripcion,
       precio,
       stock,
-      imagenUrl
+      imagenUrl,
+      categoria
     },
     proveedorId,
     rol
@@ -161,7 +164,9 @@ class ProductService {
       descripcion,
       precio,
       stock,
-      imagenUrl
+      imagenUrl,
+      // Clientes viejos no mandan categoría: se conserva la actual
+      categoria: categoria ?? existingProduct.categoria
     });
 
     /*
