@@ -1,21 +1,24 @@
 /* =========================================================
    TIENDA DEL CLIENTE — estilo "Shop"
    Lienzo gris claro, tarjetas blancas muy redondeadas con
-   sombra suave y un solo color de acento (logo y buscador).
-   El acento y el fondo vienen de src/tienda.js.
+   sombra suave y un solo acento violeta (logo y buscador).
    ========================================================= */
 
 .shop {
+  --canvas: #f2f4f5;
   --surface: #ffffff;
   --ink: #000000;
   --muted: #787574;
   --border: #ebebeb;
   --stone: #cccccc;
   --slate: #332f2d;
+  --violet: #5433eb;
+  --violet-wash: #c0b5f3;
 
   --shadow-pill: rgba(0, 0, 0, 0.06) 0 2px 8px 0;
   --shadow-card: rgba(0, 0, 0, 0.1) 0 4px 6px -1px, rgba(0, 0, 0, 0.1) 0 2px 4px -2px;
   --shadow-float: rgba(0, 0, 0, 0.12) 0 4px 24px 0;
+  --shadow-violet: rgba(69, 36, 219, 0.34) 0 4px 24px 0;
 
   --radius-card: 28px;
   --radius-image: 20px;
@@ -55,7 +58,7 @@
 
 .shop button:focus-visible,
 .shop input:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--violet);
   outline-offset: 2px;
 }
 
@@ -78,7 +81,7 @@
 }
 
 .shop-rail-logo {
-  color: var(--accent);
+  color: var(--violet);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.05em;
@@ -242,7 +245,7 @@
   font-weight: 600;
   letter-spacing: -0.06em;
   line-height: 1;
-  color: var(--accent) !important;
+  color: var(--violet) !important;
 }
 
 .shop-wordmark span {
@@ -251,7 +254,7 @@
 }
 
 /* =========================================================
-   BUSCADOR (único botón con el color de acento)
+   BUSCADOR (único botón violeta)
    ========================================================= */
 
 .shop-search {
@@ -288,9 +291,9 @@
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--violet);
   color: #ffffff !important;
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--shadow-violet);
   transition: transform 0.15s ease;
 }
 
