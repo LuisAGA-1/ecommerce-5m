@@ -1,3 +1,16 @@
+// Si cambias la lista, cámbiala también en frontend/src/components/ProductForm.jsx
+const CATEGORIAS = [
+  "Laptops",
+  "Computadoras",
+  "Monitores",
+  "Celulares",
+  "Tablets",
+  "Audio",
+  "Accesorios",
+  "Componentes",
+  "Otros"
+];
+
 class Product {
 
   constructor({
@@ -6,7 +19,8 @@ class Product {
     descripcion = "",
     precio,
     stock = 0,
-    imagenUrl = ""
+    imagenUrl = "",
+    categoria = "Otros"
   }) {
 
     if (
@@ -37,6 +51,12 @@ class Product {
       );
     }
 
+    if (!CATEGORIAS.includes(categoria)) {
+      throw new Error(
+        "Categoría no válida"
+      );
+    }
+
     this.id = id;
 
     this.nombre =
@@ -57,7 +77,12 @@ class Product {
       imagenUrl
         ? imagenUrl.trim()
         : "";
+
+    this.categoria =
+      categoria;
   }
 }
+
+Product.CATEGORIAS = CATEGORIAS;
 
 module.exports = Product;

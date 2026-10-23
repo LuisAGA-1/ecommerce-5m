@@ -25,6 +25,7 @@ class ProductController {
         error.message === "El precio debe ser mayor que 0" ||
         error.message ===
           "El stock debe ser un número entero mayor o igual a 0" ||
+        error.message === "Categoría no válida" ||
         error.message === "Proveedor no identificado"
       ) {
         return res.status(400).json({
@@ -148,7 +149,9 @@ class ProductController {
         error.message ===
           "El precio debe ser mayor que 0" ||
         error.message ===
-          "El stock debe ser un número entero mayor o igual a 0"
+          "El stock debe ser un número entero mayor o igual a 0" ||
+        error.message ===
+          "Categoría no válida"
       ) {
         return res.status(400).json({
           mensaje: error.message

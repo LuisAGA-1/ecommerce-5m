@@ -299,6 +299,10 @@ function ProductModule() {
                 </th>
 
                 <th>
+                  Categoría
+                </th>
+
+                <th>
                   Precio
                 </th>
 
@@ -367,6 +371,12 @@ function ProductModule() {
 
                         </div>
 
+                      </td>
+
+                      {/* CATEGORÍA */}
+
+                      <td>
+                        {producto.categoria || "Otros"}
                       </td>
 
                       {/* PRECIO */}

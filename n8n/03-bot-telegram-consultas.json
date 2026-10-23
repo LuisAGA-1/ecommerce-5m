@@ -159,7 +159,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.id ? `📦 Pedido PED-${String($json.id).padStart(6, '0')}\\nEstado: ${$json.estado}\\nTotal: $${Number($json.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}\\nFecha: ${new Date($json.fecha).toLocaleDateString('es-MX')}` : 'No encontré ese pedido. Ejemplo: /pedido 17' }}",
         "additionalFields": {
           "appendAttribution": false
@@ -176,7 +176,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.lista ? `🛒 Productos encontrados:\\n${$json.lista}` : 'No encontré productos con ese nombre. Ejemplo: /stock laptop' }}",
         "additionalFields": {
           "appendAttribution": false
@@ -210,8 +210,8 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').item.json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').first().json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -230,7 +230,7 @@
         "promptType": "define",
         "text": "={{ $json.message.text || 'El usuario mandó algo que no es texto (sticker, foto o audio).' }}",
         "options": {
-          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE la herramienta buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Al final, si ayuda, recuerda los comandos: /start, /pedido 17, /stock laptop."
+          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, salvo listas de productos; sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE las herramientas productos_por_categoria o buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Si piden ver un tipo de producto (por ejemplo \"muéstrame las laptops\"), usa productos_por_categoria con la categoría que corresponda (Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes u Otros) y responde SOLO con la lista, una línea por producto: Nombre – $precio MXN – N en stock. Sin saludo, sin introducción y sin texto al final.\n- Si la categoría no tiene productos, responde solo: No encontré productos de esa categoría. Para un producto o marca concreta usa buscar_productos.\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Recuerda los comandos (/start, /pedido 17, /stock laptop) solo si el usuario parece perdido."
         }
       },
       "id": "d3d1d4a9-1c08-42cf-b20a-98568363ae97",
@@ -240,11 +240,14 @@
       "position": [
         500,
         320
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash",
+        "modelName": "models/gemini-3.8-flash",
         "options": {
           "temperature": 0.3
         }
@@ -261,7 +264,7 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "sessionKey": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "contextWindowLength": 6
       },
       "id": "27f94729-2a39-4079-ad2a-29098c5ae9d2",
@@ -276,11 +279,11 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Busca productos publicados de la tienda por parte de su nombre. Devuelve nombre, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
+        "toolDescription": "Busca productos publicados por su nombre, para preguntas de un producto o marca concreta (Lenovo, iPhone). Pasa UNA palabra; el plural se quita solo. Devuelve nombre, categoría, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
         "operation": "executeQuery",
-        "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE AND nombre ILIKE '%' || $1 || '%'\nORDER BY nombre LIMIT 10;",
+        "query": "SELECT nombre, categoria, precio, stock FROM productos\nWHERE publicado = TRUE\n  AND nombre ILIKE '%' || regexp_replace(trim($1), '(es|s)$', '', 'i') || '%'\nORDER BY nombre ILIKE regexp_replace(trim($1), '(es|s)$', '', 'i') || '%' DESC, nombre\nLIMIT 10;",
         "options": {
-          "queryReplacement": "={{ [ $fromAI('texto', 'Parte del nombre del producto, por ejemplo laptop; vacío para listar', 'string') ] }}"
+          "queryReplacement": "={{ [ $fromAI('texto', 'Una palabra del tipo de producto, por ejemplo laptop; vacío para listar', 'string') ] }}"
         }
       },
       "id": "3e07d4b9-c636-4300-a48c-eed4965d6db9",
@@ -313,7 +316,26 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "descriptionType": "manual",
+        "toolDescription": "Lista los productos publicados de UNA categoría. Categorías válidas: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros. Devuelve nombre, precio (MXN) y existencias de hasta 20 productos.",
+        "operation": "executeQuery",
+        "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE AND categoria ILIKE $1\nORDER BY nombre\nLIMIT 20;",
+        "options": {
+          "queryReplacement": "={{ [ $fromAI('categoria', 'Una de: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros', 'string') ] }}"
+        }
+      },
+      "id": "4adf59f4-233b-4ea2-9a92-c6bb8d14262a",
+      "name": "productos_por_categoria",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1060,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.output }}",
         "additionalFields": {
           "appendAttribution": false
@@ -451,6 +473,17 @@
       ]
     },
     "consultar_pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente IA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "productos_por_categoria": {
       "ai_tool": [
         [
           {

@@ -17,9 +17,10 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado
+         publicado,
+         categoria
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING
          id,
          nombre,
@@ -28,7 +29,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado`,
+         publicado,
+         categoria`,
       [
         product.nombre,
         product.descripcion,
@@ -36,7 +38,8 @@ class ProductRepositoryPostgres extends ProductRepository {
         product.stock,
         product.imagenUrl,
         product.proveedorId,
-        product.publicado
+        product.publicado,
+        product.categoria
       ]
     );
 
@@ -57,7 +60,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado
+         publicado,
+         categoria
        FROM productos
        ORDER BY id`
     );
@@ -79,7 +83,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado
+         publicado,
+         categoria
        FROM productos
        WHERE publicado = TRUE
        ORDER BY id`
@@ -102,7 +107,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado
+         publicado,
+         categoria
        FROM productos
        WHERE proveedor_id = $1
        ORDER BY id`,
@@ -126,7 +132,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado
+         publicado,
+         categoria
        FROM productos
        WHERE id = $1`,
       [id]
@@ -148,8 +155,9 @@ class ProductRepositoryPostgres extends ProductRepository {
            descripcion = $2,
            precio = $3,
            stock = $4,
-           imagen_url = $5
-       WHERE id = $6
+           imagen_url = $5,
+           categoria = $6
+       WHERE id = $7
        RETURNING
          id,
          nombre,
@@ -158,13 +166,15 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado`,
+         publicado,
+         categoria`,
       [
         product.nombre,
         product.descripcion,
         product.precio,
         product.stock,
         product.imagenUrl,
+        product.categoria,
         id
       ]
     );
@@ -192,7 +202,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado`,
+         publicado,
+         categoria`,
       [id, proveedorId]
     );
 
@@ -219,7 +230,8 @@ class ProductRepositoryPostgres extends ProductRepository {
          stock,
          imagen_url,
          proveedor_id,
-         publicado`,
+         publicado,
+         categoria`,
       [id, proveedorId]
     );
 

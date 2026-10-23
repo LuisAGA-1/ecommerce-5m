@@ -172,6 +172,14 @@ sudo -u postgres psql -d ecommerce_db -f n8n/bot-usuarios-telegram.sql
 
 Si ya habías corrido `bot-lector.sql` antes, solo corre el segundo.
 
+Las categorías de productos (las usa la herramienta `productos_por_categoria` del asistente) se agregan con:
+
+```bash
+sudo -u postgres psql -d ecommerce_db -f docs/sql/categorias-productos.sql
+```
+
+Clasifica los productos por el inicio del nombre; corrige los que falten en el panel de productos.
+
 ### 3. ngrok
 
 1. Instala ngrok (https://ngrok.com/download) y crea tu cuenta.

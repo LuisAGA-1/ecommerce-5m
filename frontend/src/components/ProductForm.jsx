@@ -4,6 +4,19 @@ import {
   updateProduct
 } from "../services/productService";
 
+// Misma lista que backend/src/domain/entities/Product.js
+const CATEGORIAS = [
+  "Laptops",
+  "Computadoras",
+  "Monitores",
+  "Celulares",
+  "Tablets",
+  "Audio",
+  "Accesorios",
+  "Componentes",
+  "Otros"
+];
+
 function ProductForm({
   productoEditar,
   onProductCreated,
@@ -15,7 +28,8 @@ function ProductForm({
     descripcion: "",
     precio: "",
     stock: "",
-    imagenUrl: ""
+    imagenUrl: "",
+    categoria: "Otros"
   });
 
   const [error, setError] = useState("");
@@ -29,7 +43,8 @@ function ProductForm({
         descripcion: productoEditar.descripcion || "",
         precio: productoEditar.precio,
         stock: productoEditar.stock,
-        imagenUrl: productoEditar.imagen_url || ""
+        imagenUrl: productoEditar.imagen_url || "",
+        categoria: productoEditar.categoria || "Otros"
       });
     }
   }, [productoEditar]);
@@ -51,7 +66,8 @@ function ProductForm({
         descripcion: formulario.descripcion,
         precio: Number(formulario.precio),
         stock: Number(formulario.stock),
-        imagenUrl: formulario.imagenUrl
+        imagenUrl: formulario.imagenUrl,
+        categoria: formulario.categoria
       };
 
       if (modoEdicion) {
@@ -133,6 +149,30 @@ function ProductForm({
               placeholder="Ej. Laptop Lenovo IdeaPad"
               required
             />
+
+          </div>
+
+          <div className="form-group">
+
+            <label>
+              Categoría
+            </label>
+
+            <select
+              name="categoria"
+              value={formulario.categoria}
+              onChange={manejarCambio}
+              required
+            >
+              {CATEGORIAS.map((categoria) => (
+                <option
+                  key={categoria}
+                  value={categoria}
+                >
+                  {categoria}
+                </option>
+              ))}
+            </select>
 
           </div>
 
