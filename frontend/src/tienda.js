@@ -2,23 +2,23 @@
 // Para cambiar de giro edita este archivo (y la lista de categorías en
 // backend/src/domain/entities/Product.js).
 export const TIENDA = {
-  nombre: "tienda",
-  sufijo: "5m",
-  logoCorto: "5m",
-  acento: "#5433eb",
-  sombraAcento: "rgba(69, 36, 219, 0.34)",
-  fondo: "#f2f4f5",
-  buscador: "¿Qué buscas hoy?",
+  nombre: "paso",
+  sufijo: "urbano",
+  logoCorto: "pu",
+  nombreCompleto: "Paso Urbano",
+  acento: "#ff5a1f",
+  sombraAcento: "rgba(255, 90, 31, 0.34)",
+  fondo: "#f4f2ef",
+  buscador: "¿Qué tenis o prenda buscas?",
   // Categoría → ícono (en el orden en que se muestran)
   categorias: {
-    Laptops: "💻",
-    Computadoras: "🖥️",
-    Monitores: "📺",
-    Celulares: "📱",
-    Tablets: "📲",
-    Audio: "🎧",
-    Accesorios: "🖱️",
-    Componentes: "💾",
+    Tenis: "👟",
+    Playeras: "👕",
+    Sudaderas: "🧥",
+    Gorras: "🧢",
+    Mochilas: "🎒",
+    Calcetines: "🧦",
+    Accesorios: "🕶️",
     Otros: "📦"
   }
 };

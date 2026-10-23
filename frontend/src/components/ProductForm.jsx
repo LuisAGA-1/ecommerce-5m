@@ -188,7 +188,7 @@ function ProductForm({
             </label>
 
             <input
-              type="url"
+              type="text"
               name="imagenUrl"
               value={formulario.imagenUrl}
               onChange={manejarCambio}
