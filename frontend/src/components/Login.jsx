@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { login } from "../services/authService";
+import { TIENDA } from "../tienda";
 
 function Login({ onLogin }) {
 
@@ -69,12 +70,15 @@ function Login({ onLogin }) {
 
       <div className="login-card">
 
-        <div className="login-logo">
-          EC
+        <div
+          className="login-logo"
+          style={{ background: TIENDA.acento }}
+        >
+          {TIENDA.logoCorto.toUpperCase()}
         </div>
 
         <h1>
-          E-Commerce
+          {TIENDA.nombreCompleto}
         </h1>
 
         <p className="login-subtitle">

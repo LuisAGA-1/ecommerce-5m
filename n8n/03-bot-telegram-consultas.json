@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Bot de Telegram (n8n + ngrok + PostgreSQL)\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\n- `/start`: registra al usuario en `telegram_usuarios` y le da la bienvenida.\n- `/pedido 17` (o `/pedido PED-000017`) y `/stock laptop`: consultas de solo lectura.\n- Cualquier otro texto (salida *default*): **Asistente IA** (Gemini) que consulta productos y pedidos en solo lectura.\n\nGuía: `docs/N8N.md`, sección *Bot de Telegram*. SQL: `n8n/bot-lector.sql` y `n8n/bot-usuarios-telegram.sql`.",
+        "content": "## Bot de Telegram (n8n + ngrok + PostgreSQL)\nTelegram Trigger → Switch → Postgres → Telegram Send Message.\n\n- `/start`: registra al usuario en `telegram_usuarios` y le da la bienvenida.\n- `/pedido 17` (o `/pedido PED-000017`) y `/stock guitarra`: consultas de solo lectura.\n- Cualquier otro texto (salida *default*): **Asistente IA** (Gemini) que consulta productos y pedidos en solo lectura.\n\nGuía: `docs/N8N.md`, sección *Bot de Telegram*. SQL: `n8n/bot-lector.sql` y `n8n/bot-usuarios-telegram.sql`.",
         "height": 320,
         "width": 420
       },
@@ -177,7 +177,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        "text": "={{ $json.lista ? `🛒 Productos encontrados:\\n${$json.lista}` : 'No encontré productos con ese nombre. Ejemplo: /stock laptop' }}",
+        "text": "={{ $json.lista ? `🛒 Productos encontrados:\\n${$json.lista}` : 'No encontré productos con ese nombre. Ejemplo: /stock guitarra' }}",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -211,7 +211,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        "text": "={{ `¡Bienvenido a Tienda 5M, ${$('Telegram Trigger').first().json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock laptop → existencias de un producto` }}",
+        "text": "={{ `¡Bienvenido a RockZone, ${$('Telegram Trigger').first().json.message.from.first_name ?? ''}! 👋\\n${$json.nuevo ? 'Ya quedaste registrado.' : 'Ya estabas registrado; actualicé tus datos.'}\\n\\nComandos:\\n/pedido 17 → estado de un pedido\\n/stock guitarra → existencias de un producto` }}",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -230,7 +230,7 @@
         "promptType": "define",
         "text": "={{ $json.message.text || 'El usuario mandó algo que no es texto (sticker, foto o audio).' }}",
         "options": {
-          "systemMessage": "Eres el asistente de Tienda 5M, una tienda en línea en México. Responde en español, breve y amable (máximo 6 líneas, salvo listas de productos; sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE las herramientas productos_por_categoria o buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Si piden ver un tipo de producto (por ejemplo \"muéstrame las laptops\"), usa productos_por_categoria con la categoría que corresponda (Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes u Otros) y responde SOLO con la lista, una línea por producto: Nombre – $precio MXN – N en stock. Sin saludo, sin introducción y sin texto al final.\n- Si la categoría no tiene productos, responde solo: No encontré productos de esa categoría. Para un producto o marca concreta usa buscar_productos.\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Recuerda los comandos (/start, /pedido 17, /stock laptop) solo si el usuario parece perdido."
+          "systemMessage": "Eres el asistente de RockZone, una tienda en línea de instrumentos musicales y equipo para bandas de rock en México. Responde en español, breve y amable (máximo 6 líneas, salvo listas de productos; sin formato Markdown).\n- Para precios, existencias o productos usa SIEMPRE las herramientas productos_por_categoria o buscar_productos; nunca inventes datos. Precios en pesos mexicanos (MXN).\n- Si piden ver un tipo de producto (por ejemplo \"muéstrame los instrumentos\"), usa productos_por_categoria con la categoría que corresponda (Instrumentos, Insumos y refacciones, Efectos y accesorios, Amplificación y sonido, Equipo para bandas u Otros) y responde SOLO con la lista, una línea por producto: Nombre – $precio MXN – N en stock. Sin saludo, sin introducción y sin texto al final.\n- Si la categoría no tiene productos, responde solo: No encontré productos de esa categoría. Para un producto o marca concreta usa buscar_productos.\n- Para el estado de un pedido usa consultar_pedido con su número (PED-000017 es el 17).\n- Si te piden algo que no tiene que ver con la tienda, dilo con amabilidad y regresa al tema.\n- Si no sabes algo, dilo; no prometas descuentos, envíos ni fechas.\n- Recuerda los comandos (/start, /pedido 17, /stock guitarra) solo si el usuario parece perdido."
         }
       },
       "id": "d3d1d4a9-1c08-42cf-b20a-98568363ae97",
@@ -279,11 +279,11 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Busca productos publicados por su nombre, para preguntas de un producto o marca concreta (Lenovo, iPhone). Pasa UNA palabra; el plural se quita solo. Devuelve nombre, categoría, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
+        "toolDescription": "Busca productos publicados por su nombre, para preguntas de un producto o marca concreta (Stratus, Fuzz). Pasa UNA palabra; el plural se quita solo. Devuelve nombre, categoría, precio (MXN) y existencias de hasta 10 productos. Manda texto vacío para listar algunos.",
         "operation": "executeQuery",
         "query": "SELECT nombre, categoria, precio, stock FROM productos\nWHERE publicado = TRUE\n  AND nombre ILIKE '%' || regexp_replace(trim($1), '(es|s)$', '', 'i') || '%'\nORDER BY nombre ILIKE regexp_replace(trim($1), '(es|s)$', '', 'i') || '%' DESC, nombre\nLIMIT 10;",
         "options": {
-          "queryReplacement": "={{ [ $fromAI('texto', 'Una palabra del tipo de producto, por ejemplo laptop; vacío para listar', 'string') ] }}"
+          "queryReplacement": "={{ [ $fromAI('texto', 'Una palabra del tipo de producto, por ejemplo guitarra; vacío para listar', 'string') ] }}"
         }
       },
       "id": "3e07d4b9-c636-4300-a48c-eed4965d6db9",
@@ -317,11 +317,11 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Lista los productos publicados de UNA categoría. Categorías válidas: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros. Devuelve nombre, precio (MXN) y existencias de hasta 20 productos.",
+        "toolDescription": "Lista los productos publicados de UNA categoría. Categorías válidas: Instrumentos, Insumos y refacciones, Efectos y accesorios, Amplificación y sonido, Equipo para bandas, Otros. Devuelve nombre, precio (MXN) y existencias de hasta 20 productos.",
         "operation": "executeQuery",
         "query": "SELECT nombre, precio, stock FROM productos\nWHERE publicado = TRUE AND categoria ILIKE $1\nORDER BY nombre\nLIMIT 20;",
         "options": {
-          "queryReplacement": "={{ [ $fromAI('categoria', 'Una de: Laptops, Computadoras, Monitores, Celulares, Tablets, Audio, Accesorios, Componentes, Otros', 'string') ] }}"
+          "queryReplacement": "={{ [ $fromAI('categoria', 'Una de: Instrumentos, Insumos y refacciones, Efectos y accesorios, Amplificación y sonido, Equipo para bandas, Otros', 'string') ] }}"
         }
       },
       "id": "4adf59f4-233b-4ea2-9a92-c6bb8d14262a",

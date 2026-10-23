@@ -15,25 +15,14 @@ import Icono from "./Icono";
 
 import "./shop.css";
 
+import { TIENDA, CATEGORIAS } from "../../tienda";
+
 // Etiquetas visibles para los estados del pedido.
 // En BD el estado sigue siendo PENDIENTE / ACEPTADO / RECHAZADO.
 const ETIQUETAS_ESTADO = {
   PENDIENTE: "Pendiente de pago",
   ACEPTADO: "Pagado / Aceptado",
   RECHAZADO: "Rechazado"
-};
-
-// Ícono de cada categoría (las mismas de backend/src/domain/entities/Product.js)
-const ICONOS_CATEGORIA = {
-  Laptops: "💻",
-  Computadoras: "🖥️",
-  Monitores: "📺",
-  Celulares: "📱",
-  Tablets: "📲",
-  Audio: "🎧",
-  Accesorios: "🖱️",
-  Componentes: "💾",
-  Otros: "📦"
 };
 
 const MENU = [
@@ -317,7 +306,7 @@ function ClientModule({
 
   // CATEGORÍAS QUE TIENEN PRODUCTOS (en el orden de la lista)
   const categorias =
-    Object.keys(ICONOS_CATEGORIA).filter(categoria =>
+    CATEGORIAS.filter(categoria =>
       productosDisponibles.some(
         producto =>
           (producto.categoria || "Otros") === categoria
@@ -330,7 +319,7 @@ function ClientModule({
       (!categoriaActiva ||
         (producto.categoria || "Otros") === categoriaActiva) &&
       normalizar(
-        `${producto.nombre} ${producto.descripcion}`
+        `${producto.nombre} ${producto.descripcion} ${producto.categoria}`
       ).includes(normalizar(busqueda.trim()))
     );
 
@@ -464,7 +453,7 @@ function ClientModule({
           onChange={event =>
             setBusqueda(event.target.value)
           }
-          placeholder="¿Qué buscas hoy?"
+          placeholder={TIENDA.buscador}
           aria-label="Buscar productos"
         />
 
@@ -646,7 +635,7 @@ function ClientModule({
             </div>
 
             <h1 className="shop-wordmark">
-              tienda<span>5m</span>
+              {TIENDA.nombre}<span>{TIENDA.sufijo}</span>
             </h1>
 
             {buscador()}
@@ -663,7 +652,7 @@ function ClientModule({
                   }
                 >
                   <span className="shop-pill-icon">
-                    {ICONOS_CATEGORIA[categoria]}
+                    {TIENDA.categorias[categoria]}
                   </span>
                   {categoria}
                 </button>
@@ -768,7 +757,7 @@ function ClientModule({
                   }
                 >
                   <span className="shop-pill-icon">
-                    {ICONOS_CATEGORIA[categoria]}
+                    {TIENDA.categorias[categoria]}
                   </span>
                   {categoria}
                 </button>
@@ -1301,12 +1290,19 @@ function ClientModule({
 
   return (
 
-    <div className="shop">
+    <div
+      className="shop"
+      style={{
+        "--accent": TIENDA.acento,
+        "--shadow-accent": `${TIENDA.sombraAcento} 0 4px 24px 0`,
+        "--canvas": TIENDA.fondo
+      }}
+    >
 
       <aside className="shop-rail">
 
         <span className="shop-rail-logo">
-          5m
+          {TIENDA.logoCorto}
         </span>
 
         <nav>

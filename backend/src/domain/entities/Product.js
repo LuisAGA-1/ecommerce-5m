@@ -1,13 +1,10 @@
-// Si cambias la lista, cámbiala también en frontend/src/components/ProductForm.jsx
+// Si cambias la lista, cámbiala también en frontend/src/tienda.js
 const CATEGORIAS = [
-  "Laptops",
-  "Computadoras",
-  "Monitores",
-  "Celulares",
-  "Tablets",
-  "Audio",
-  "Accesorios",
-  "Componentes",
+  "Instrumentos",
+  "Insumos y refacciones",
+  "Efectos y accesorios",
+  "Amplificación y sonido",
+  "Equipo para bandas",
   "Otros"
 ];
 
