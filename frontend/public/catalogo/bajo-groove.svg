@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#ffffff"/><g transform="rotate(-35 200 200)">
-<rect x="192" y="0" width="16" height="230" rx="4" fill="#5a3a20"/>
-<rect x="186" y="-14" width="28" height="30" rx="6" fill="#222"/>
-<path d="M200 215c-35-15-85 0-85 45 0 25 12 40 8 60-4 28 22 50 77 50s81-22 77-50c-4-20 8-35 8-60 0-45-50-60-85-45z" fill="#2f4e8c"/>
-<rect x="176" y="265" width="48" height="14" rx="4" fill="#222"/><rect x="176" y="320" width="48" height="8" rx="3" fill="#bbb"/></g></svg>

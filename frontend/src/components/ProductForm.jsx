@@ -5,7 +5,17 @@ import {
 } from "../services/productService";
 
 // Misma lista que backend/src/domain/entities/Product.js
-import { CATEGORIAS } from "../tienda";
+const CATEGORIAS = [
+  "Laptops",
+  "Computadoras",
+  "Monitores",
+  "Celulares",
+  "Tablets",
+  "Audio",
+  "Accesorios",
+  "Componentes",
+  "Otros"
+];
 
 function ProductForm({
   productoEditar,
@@ -188,7 +198,7 @@ function ProductForm({
             </label>
 
             <input
-              type="text"
+              type="url"
               name="imagenUrl"
               value={formulario.imagenUrl}
               onChange={manejarCambio}
