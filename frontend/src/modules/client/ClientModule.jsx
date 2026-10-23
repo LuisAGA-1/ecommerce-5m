@@ -11,6 +11,10 @@ import {
 
 import CheckoutConfirmation from "../../components/CheckoutConfirmation";
 
+import Icono from "./Icono";
+
+import "./shop.css";
+
 // Etiquetas visibles para los estados del pedido.
 // En BD el estado sigue siendo PENDIENTE / ACEPTADO / RECHAZADO.
 const ETIQUETAS_ESTADO = {
@@ -19,10 +23,46 @@ const ETIQUETAS_ESTADO = {
   RECHAZADO: "Rechazado"
 };
 
+// Ícono de cada categoría (las mismas de backend/src/domain/entities/Product.js)
+const ICONOS_CATEGORIA = {
+  Laptops: "💻",
+  Computadoras: "🖥️",
+  Monitores: "📺",
+  Celulares: "📱",
+  Tablets: "📲",
+  Audio: "🎧",
+  Accesorios: "🖱️",
+  Componentes: "💾",
+  Otros: "📦"
+};
+
+const MENU = [
+  { vista: "inicio", etiqueta: "Inicio", icono: "inicio" },
+  { vista: "productos", etiqueta: "Productos", icono: "productos" },
+  { vista: "carrito", etiqueta: "Mi carrito", icono: "carrito" },
+  { vista: "pedidos", etiqueta: "Mis pedidos", icono: "pedidos" }
+];
+
+// Minúsculas y sin acentos, para buscar "telefono" o "Teléfono" igual.
+function normalizar(texto) {
+  return (texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function ClientModule({
-  vistaActual,
-  cambiarVista
+  vistaActual: vistaPedida,
+  cambiarVista,
+  usuario,
+  onCerrarSesion
 }) {
+
+  // Al recargar la página App arranca en "dashboard": se muestra Inicio.
+  const vistaActual =
+    MENU.some(item => item.vista === vistaPedida)
+      ? vistaPedida
+      : "inicio";
 
   const [productos, setProductos] =
     useState([]);
@@ -52,6 +92,12 @@ function ClientModule({
 
   const [enviandoPedido, setEnviandoPedido] =
     useState(false);
+
+  const [busqueda, setBusqueda] =
+    useState("");
+
+  const [categoriaActiva, setCategoriaActiva] =
+    useState("");
 
   // CARGAR PRODUCTOS
   async function cargarProductos() {
@@ -269,6 +315,35 @@ function ClientModule({
         Number(producto.stock) > 0
     );
 
+  // CATEGORÍAS QUE TIENEN PRODUCTOS (en el orden de la lista)
+  const categorias =
+    Object.keys(ICONOS_CATEGORIA).filter(categoria =>
+      productosDisponibles.some(
+        producto =>
+          (producto.categoria || "Otros") === categoria
+      )
+    );
+
+  // PRODUCTOS FILTRADOS POR BÚSQUEDA Y CATEGORÍA
+  const productosFiltrados =
+    productosDisponibles.filter(producto =>
+      (!categoriaActiva ||
+        (producto.categoria || "Otros") === categoriaActiva) &&
+      normalizar(
+        `${producto.nombre} ${producto.descripcion}`
+      ).includes(normalizar(busqueda.trim()))
+    );
+
+  function verCategoria(categoria) {
+    setCategoriaActiva(categoria);
+    cambiarVista("productos");
+  }
+
+  function buscar(event) {
+    event.preventDefault();
+    cambiarVista("productos");
+  }
+
   // ENVIAR PEDIDO
   async function realizarPedido() {
 
@@ -374,858 +449,927 @@ function ClientModule({
     ).toLowerCase()}`;
   }
 
-  // CARGANDO
-  if (
-    cargando &&
-    vistaActual !== "pedidos"
-  ) {
+  // BUSCADOR CON BOTÓN VIOLETA
+  function buscador() {
 
     return (
-      <div className="client-loading">
-        Cargando productos...
-      </div>
+      <form
+        className="shop-search"
+        onSubmit={buscar}
+        role="search"
+      >
+        <input
+          type="search"
+          value={busqueda}
+          onChange={event =>
+            setBusqueda(event.target.value)
+          }
+          placeholder="¿Qué buscas hoy?"
+          aria-label="Buscar productos"
+        />
+
+        <button
+          type="submit"
+          aria-label="Buscar"
+        >
+          <Icono nombre="flecha" tamano={20} />
+        </button>
+      </form>
     );
   }
 
-  // INICIO
-  if (vistaActual === "inicio") {
+  // TARJETA DE PRODUCTO
+  function tarjetaProducto(producto) {
 
     return (
+      <article
+        className="shop-card"
+        key={producto.id}
+      >
 
-      <div className="client-view">
+        <div className="shop-card-image">
 
-        <div className="client-welcome-card">
+          {producto.imagen_url ? (
 
-          <div>
+            <img
+              src={producto.imagen_url}
+              alt={producto.nombre}
+              loading="lazy"
+            />
 
-            <span className="client-eyebrow">
-              BIENVENIDO A LA TIENDA
+          ) : (
+
+            <span className="shop-card-placeholder">
+              {producto.nombre.charAt(0).toUpperCase()}
             </span>
 
-            <h2>
-              Compra de forma sencilla
-            </h2>
+          )}
 
-            <p>
-              Explora nuestro catálogo,
-              agrega productos a tu carrito
-              y envía tu pedido al administrador.
-            </p>
+        </div>
+
+        <div className="shop-card-body">
+
+          <span className="shop-card-meta">
+            {producto.categoria || "Otros"}
+            {" · "}
+            {producto.stock} disponibles
+          </span>
+
+          <h3>
+            {producto.nombre}
+          </h3>
+
+          <div className="shop-card-bottom">
+
+            <strong>
+              ${formatearPrecio(producto.precio)}
+            </strong>
 
             <button
-              className="client-primary-button"
+              className="shop-add-button"
               onClick={() =>
-                cambiarVista("productos")
+                agregarAlCarrito(producto)
               }
             >
-              Ver productos
+              Agregar
             </button>
 
           </div>
 
         </div>
 
-        <div className="client-stats-grid">
+      </article>
+    );
+  }
 
-          <div className="client-stat-card">
+  function mensajes() {
 
-            <span className="client-stat-label">
-              Productos disponibles
-            </span>
-
-            <strong>
-              {productosDisponibles.length}
-            </strong>
-
-            <span>
-              En catálogo
-            </span>
-
+    return (
+      <>
+        {error && (
+          <div className="client-message error">
+            {error}
           </div>
+        )}
 
-          <div className="client-stat-card">
-
-            <span className="client-stat-label">
-              Productos en carrito
-            </span>
-
-            <strong>
-              {cantidadTotal}
-            </strong>
-
-            <span>
-              Unidades
-            </span>
-
+        {mensaje && (
+          <div className="client-message success">
+            {mensaje}
           </div>
+        )}
+      </>
+    );
+  }
 
-          <div className="client-stat-card">
+  function contenido() {
 
-            <span className="client-stat-label">
-              Mis pedidos
-            </span>
+    // CARGANDO
+    if (
+      cargando &&
+      vistaActual !== "pedidos"
+    ) {
 
-            <strong>
-              {pedidos.length}
-            </strong>
+      return (
+        <div className="client-loading">
+          Cargando productos...
+        </div>
+      );
+    }
 
-            <span>
-              Pedidos realizados
-            </span>
+    // INICIO
+    if (vistaActual === "inicio") {
 
-          </div>
+      // Un producto de cada categoría para la portada
+      const destacados =
+        categorias
+          .map(categoria =>
+            productosDisponibles.find(
+              producto =>
+                (producto.categoria || "Otros") === categoria
+            )
+          )
+          .concat(productosDisponibles)
+          .filter((producto, i, lista) =>
+            lista.indexOf(producto) === i
+          )
+          .slice(0, 5);
 
-          <div className="client-stat-card">
+      return (
 
-            <span className="client-stat-label">
-              Total del carrito
-            </span>
+        <div className="client-view">
 
-            <strong>
-              ${formatearPrecio(total)}
-            </strong>
+          <section className="shop-hero">
 
-            <span>
-              Por enviar
-            </span>
+            <div className="shop-constellation">
 
-          </div>
+              {destacados.map(producto => (
+
+                <button
+                  className="shop-float-card"
+                  key={producto.id}
+                  onClick={() =>
+                    verCategoria(producto.categoria || "Otros")
+                  }
+                >
+
+                  <div className="shop-card-image">
+
+                    {producto.imagen_url ? (
+
+                      <img
+                        src={producto.imagen_url}
+                        alt={producto.nombre}
+                      />
+
+                    ) : (
+
+                      <span className="shop-card-placeholder">
+                        {producto.nombre.charAt(0).toUpperCase()}
+                      </span>
+
+                    )}
+
+                  </div>
+
+                  <strong>
+                    {producto.nombre}
+                  </strong>
+
+                  <span>
+                    ${formatearPrecio(producto.precio)}
+                  </span>
+
+                </button>
+
+              ))}
+
+            </div>
+
+            <h1 className="shop-wordmark">
+              tienda<span>5m</span>
+            </h1>
+
+            {buscador()}
+
+            <div className="shop-pills">
+
+              {categorias.map(categoria => (
+
+                <button
+                  className="shop-pill"
+                  key={categoria}
+                  onClick={() =>
+                    verCategoria(categoria)
+                  }
+                >
+                  <span className="shop-pill-icon">
+                    {ICONOS_CATEGORIA[categoria]}
+                  </span>
+                  {categoria}
+                </button>
+
+              ))}
+
+            </div>
+
+          </section>
+
+          {mensajes()}
+
+          {categorias.map(categoria => (
+
+            <section
+              className="shop-band"
+              key={categoria}
+            >
+
+              <button
+                className="shop-band-header"
+                onClick={() =>
+                  verCategoria(categoria)
+                }
+              >
+                {categoria}
+                <Icono nombre="chevron" tamano={16} />
+              </button>
+
+              <div className="shop-grid">
+
+                {productosDisponibles
+                  .filter(producto =>
+                    (producto.categoria || "Otros") === categoria
+                  )
+                  .slice(0, 4)
+                  .map(tarjetaProducto)}
+
+              </div>
+
+            </section>
+
+          ))}
+
+          {productosDisponibles.length === 0 && (
+
+            <div className="client-empty-state">
+
+              <h3>
+                Aún no hay productos
+              </h3>
+
+              <p>
+                Vuelve pronto: el catálogo se está preparando.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
+      );
+    }
 
-        <div className="client-home-section">
+    // PRODUCTOS
+    if (vistaActual === "productos") {
+
+      return (
+
+        <div className="client-view">
+
+          <div className="shop-catalog-top">
+
+            {buscador()}
+
+            <div className="shop-pills">
+
+              <button
+                className={
+                  categoriaActiva === ""
+                    ? "shop-pill active"
+                    : "shop-pill"
+                }
+                onClick={() =>
+                  setCategoriaActiva("")
+                }
+              >
+                Todas
+              </button>
+
+              {categorias.map(categoria => (
+
+                <button
+                  className={
+                    categoriaActiva === categoria
+                      ? "shop-pill active"
+                      : "shop-pill"
+                  }
+                  key={categoria}
+                  onClick={() =>
+                    setCategoriaActiva(categoria)
+                  }
+                >
+                  <span className="shop-pill-icon">
+                    {ICONOS_CATEGORIA[categoria]}
+                  </span>
+                  {categoria}
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {mensajes()}
+
+          <div className="client-section-header">
+
+            <h2>
+              {categoriaActiva || "Todos los productos"}
+            </h2>
+
+            <span className="client-cart-count">
+              {productosFiltrados.length} producto
+              {productosFiltrados.length !== 1 ? "s" : ""}
+            </span>
+
+          </div>
+
+          {productosFiltrados.length === 0 ? (
+
+            <div className="client-empty-state">
+
+              <h3>
+                No encontramos productos
+              </h3>
+
+              <p>
+                Prueba con otra palabra o elige otra categoría.
+              </p>
+
+              <button
+                className="client-secondary-button"
+                onClick={() => {
+                  setBusqueda("");
+                  setCategoriaActiva("");
+                }}
+              >
+                Ver todo
+              </button>
+
+            </div>
+
+          ) : (
+
+            <div className="shop-grid">
+              {productosFiltrados.map(tarjetaProducto)}
+            </div>
+
+          )}
+
+        </div>
+      );
+    }
+
+    // CARRITO
+    if (vistaActual === "carrito") {
+
+      return (
+
+        <div className="client-view">
+
+          {error && (
+            <div className="client-message error">
+              {error}
+            </div>
+          )}
+
+          {mensaje && (
+            <div className="client-message success">
+              {mensaje}
+            </div>
+          )}
 
           <div className="client-section-header">
 
             <div>
 
               <span className="client-eyebrow">
-                CATÁLOGO
+                COMPRA
               </span>
 
               <h2>
-                Productos destacados
+                Mi carrito
               </h2>
 
-            </div>
-
-            <button
-              className="client-link-button"
-              onClick={() =>
-                cambiarVista("productos")
-              }
-            >
-              Ver todos
-            </button>
-
-          </div>
-
-          <div className="client-product-grid">
-
-            {productosDisponibles
-              .slice(0, 3)
-              .map(producto => (
-
-                <article
-                  className="client-product-card"
-                  key={producto.id}
-                >
-
-                  <div className="client-product-image">
-
-                    {producto.imagen_url ? (
-
-                      <img
-                        src={
-                          producto.imagen_url
-                        }
-                        alt={
-                          producto.nombre
-                        }
-                      />
-
-                    ) : (
-
-                      <div className="product-image-placeholder">
-                        Sin imagen
-                      </div>
-
-                    )}
-
-                  </div>
-
-                  <div className="client-product-info">
-
-                    <h3>
-                      {producto.nombre}
-                    </h3>
-
-                    <p className="client-product-description">
-                      {producto.descripcion ||
-                        "Sin descripción"}
-                    </p>
-
-                    <div className="client-product-bottom">
-
-                      <strong className="client-product-price">
-                        $
-                        {formatearPrecio(
-                          producto.precio
-                        )}
-                      </strong>
-
-                      <button
-                        className="client-add-button"
-                        onClick={() =>
-                          agregarAlCarrito(
-                            producto
-                          )
-                        }
-                      >
-                        Agregar
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </article>
-
-              ))}
-
-          </div>
-
-        </div>
-
-      </div>
-    );
-  }
-
-  // PRODUCTOS
-  if (vistaActual === "productos") {
-
-    return (
-
-      <div className="client-view">
-
-        {error && (
-          <div className="client-message error">
-            {error}
-          </div>
-        )}
-
-        {mensaje && (
-          <div className="client-message success">
-            {mensaje}
-          </div>
-        )}
-
-        <div className="client-section-header">
-
-          <div>
-
-            <span className="client-eyebrow">
-              CATÁLOGO
-            </span>
-
-            <h2>
-              Productos disponibles
-            </h2>
-
-            <p>
-              Selecciona los productos que deseas solicitar.
-            </p>
-
-          </div>
-
-          <button
-            className="client-cart-summary-button"
-            onClick={() =>
-              cambiarVista("carrito")
-            }
-          >
-            Carrito
-            <span>
-              {cantidadTotal}
-            </span>
-          </button>
-
-        </div>
-
-        {productosDisponibles.length === 0 ? (
-
-          <div className="client-empty-state">
-
-            <h3>
-              No hay productos disponibles
-            </h3>
-
-            <p>
-              Actualmente no hay productos
-              con stock.
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div className="client-product-grid">
-
-            {productosDisponibles.map(
-              producto => (
-
-                <article
-                  className="client-product-card"
-                  key={producto.id}
-                >
-
-                  <div className="client-product-image">
-
-                    {producto.imagen_url ? (
-
-                      <img
-                        src={
-                          producto.imagen_url
-                        }
-                        alt={
-                          producto.nombre
-                        }
-                      />
-
-                    ) : (
-
-                      <div className="product-image-placeholder">
-                        Sin imagen
-                      </div>
-
-                    )}
-
-                  </div>
-
-                  <div className="client-product-info">
-
-                    <h3>
-                      {producto.nombre}
-                    </h3>
-
-                    <p className="client-product-description">
-                      {producto.descripcion ||
-                        "Sin descripción"}
-                    </p>
-
-                    <div className="client-product-meta">
-
-                      <span>
-                        Stock disponible:{" "}
-                        {producto.stock}
-                      </span>
-
-                    </div>
-
-                    <div className="client-product-bottom">
-
-                      <strong className="client-product-price">
-                        $
-                        {formatearPrecio(
-                          producto.precio
-                        )}
-                      </strong>
-
-                      <button
-                        className="client-add-button"
-                        onClick={() =>
-                          agregarAlCarrito(
-                            producto
-                          )
-                        }
-                      >
-                        Agregar
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </article>
-
-              )
-            )}
-
-          </div>
-
-        )}
-
-      </div>
-    );
-  }
-
-  // CARRITO
-  if (vistaActual === "carrito") {
-
-    return (
-
-      <div className="client-view">
-
-        {error && (
-          <div className="client-message error">
-            {error}
-          </div>
-        )}
-
-        {mensaje && (
-          <div className="client-message success">
-            {mensaje}
-          </div>
-        )}
-
-        <div className="client-section-header">
-
-          <div>
-
-            <span className="client-eyebrow">
-              COMPRA
-            </span>
-
-            <h2>
-              Mi carrito
-            </h2>
-
-            <p>
-              Revisa tus productos antes de enviar el pedido.
-            </p>
-
-          </div>
-
-          <span className="client-cart-count">
-            {cantidadTotal} producto
-            {cantidadTotal !== 1
-              ? "s"
-              : ""}
-          </span>
-
-        </div>
-
-        {pedidoConfirmado ? (
-
-          <CheckoutConfirmation
-            pedido={pedidoConfirmado}
-            formatearPrecio={formatearPrecio}
-            onVerPedidos={() => {
-              setPedidoConfirmado(null);
-              cambiarVista("pedidos");
-            }}
-            onSeguirComprando={() => {
-              setPedidoConfirmado(null);
-              cambiarVista("productos");
-            }}
-          />
-
-        ) : carrito.length === 0 ? (
-
-          <div className="client-empty-state">
-
-            <h3>
-              Tu carrito está vacío
-            </h3>
-
-            <p>
-              Agrega productos del catálogo
-              para comenzar tu pedido.
-            </p>
-
-            <button
-              className="client-primary-button"
-              onClick={() =>
-                cambiarVista("productos")
-              }
-            >
-              Explorar productos
-            </button>
-
-          </div>
-
-        ) : (
-
-          <div className="client-cart-page">
-
-            <div className="client-cart-list">
-
-              {carrito.map(item => (
-
-                <div
-                  className="client-cart-item"
-                  key={item.id}
-                >
-
-                  <div className="client-cart-item-image">
-
-                    {item.imagen_url ? (
-
-                      <img
-                        src={
-                          item.imagen_url
-                        }
-                        alt={
-                          item.nombre
-                        }
-                      />
-
-                    ) : (
-
-                      <span>
-                        Sin imagen
-                      </span>
-
-                    )}
-
-                  </div>
-
-                  <div className="client-cart-item-info">
-
-                    <h3>
-                      {item.nombre}
-                    </h3>
-
-                    <span>
-                      $
-                      {formatearPrecio(
-                        item.precio
-                      )}{" "}
-                      por unidad
-                    </span>
-
-                  </div>
-
-                  <div className="client-cart-controls">
-
-                    <button
-                      onClick={() =>
-                        disminuirCantidad(
-                          item.id
-                        )
-                      }
-                    >
-                      −
-                    </button>
-
-                    <strong>
-                      {item.cantidad}
-                    </strong>
-
-                    <button
-                      onClick={() =>
-                        aumentarCantidad(
-                          item.id
-                        )
-                      }
-                    >
-                      +
-                    </button>
-
-                  </div>
-
-                  <strong className="client-cart-item-total">
-                    $
-                    {formatearPrecio(
-                      Number(item.precio) *
-                      item.cantidad
-                    )}
-                  </strong>
-
-                  <button
-                    className="client-cart-remove"
-                    onClick={() =>
-                      eliminarDelCarrito(
-                        item.id
-                      )
-                    }
-                  >
-                    Eliminar
-                  </button>
-
-                </div>
-
-              ))}
+              <p>
+                Revisa tus productos antes de enviar el pedido.
+              </p>
 
             </div>
 
-            <aside className="client-cart-summary">
+            <span className="client-cart-count">
+              {cantidadTotal} producto
+              {cantidadTotal !== 1
+                ? "s"
+                : ""}
+            </span>
 
-              <span>
-                RESUMEN DEL PEDIDO
-              </span>
+          </div>
+
+          {pedidoConfirmado ? (
+
+            <CheckoutConfirmation
+              pedido={pedidoConfirmado}
+              formatearPrecio={formatearPrecio}
+              onVerPedidos={() => {
+                setPedidoConfirmado(null);
+                cambiarVista("pedidos");
+              }}
+              onSeguirComprando={() => {
+                setPedidoConfirmado(null);
+                cambiarVista("productos");
+              }}
+            />
+
+          ) : carrito.length === 0 ? (
+
+            <div className="client-empty-state">
 
               <h3>
-                Total
+                Tu carrito está vacío
               </h3>
 
-              <strong>
-                $
-                {formatearPrecio(
-                  total
-                )}
-              </strong>
-
-              <div className="checkout-payment-method">
-
-                <span className="checkout-payment-label">
-                  Método de pago
-                </span>
-
-                <label className="checkout-payment-option">
-
-                  <input
-                    type="radio"
-                    checked
-                    readOnly
-                  />
-
-                  <div>
-                    <strong>
-                      Transferencia o depósito bancario
-                    </strong>
-                    <small>
-                      No se cobra con tarjeta en línea.
-                      Recibirás por correo el comprobante
-                      y los datos bancarios.
-                    </small>
-                  </div>
-
-                </label>
-
-              </div>
+              <p>
+                Agrega productos del catálogo
+                para comenzar tu pedido.
+              </p>
 
               <button
-                className="client-checkout-button"
-                onClick={
-                  realizarPedido
-                }
-                disabled={enviandoPedido}
-              >
-                {enviandoPedido
-                  ? "Generando pedido..."
-                  : "Confirmar pedido"}
-              </button>
-
-              <button
-                className="client-secondary-button"
+                className="client-primary-button"
                 onClick={() =>
                   cambiarVista("productos")
                 }
               >
-                Seguir comprando
+                Explorar productos
               </button>
 
-              <p>
-                Tu pedido quedará como
-                <strong> Pendiente de pago </strong>
-                hasta que el administrador
-                valide tu transferencia.
-              </p>
+            </div>
 
-            </aside>
+          ) : (
 
-          </div>
+            <div className="client-cart-page">
 
-        )}
+              <div className="client-cart-list">
 
-      </div>
-    );
-  }
+                {carrito.map(item => (
 
-  // MIS PEDIDOS
-  if (vistaActual === "pedidos") {
+                  <div
+                    className="client-cart-item"
+                    key={item.id}
+                  >
 
-    return (
+                    <div className="client-cart-item-image">
 
-      <div className="client-view">
+                      {item.imagen_url ? (
 
-        {error && (
-          <div className="client-message error">
-            {error}
-          </div>
-        )}
+                        <img
+                          src={
+                            item.imagen_url
+                          }
+                          alt={
+                            item.nombre
+                          }
+                        />
 
-        <div className="client-section-header">
+                      ) : (
 
-          <div>
+                        <span>
+                          Sin imagen
+                        </span>
 
-            <span className="client-eyebrow">
-              HISTORIAL
-            </span>
+                      )}
 
-            <h2>
-              Mis pedidos
-            </h2>
+                    </div>
 
-            <p>
-              Consulta el estado de los pedidos que has realizado.
-            </p>
+                    <div className="client-cart-item-info">
 
-          </div>
+                      <h3>
+                        {item.nombre}
+                      </h3>
 
-          <button
-            className="client-secondary-button"
-            onClick={
-              cargarMisPedidos
-            }
-          >
-            Actualizar
-          </button>
+                      <span>
+                        $
+                        {formatearPrecio(
+                          item.precio
+                        )}{" "}
+                        por unidad
+                      </span>
+
+                    </div>
+
+                    <div className="client-cart-controls">
+
+                      <button
+                        onClick={() =>
+                          disminuirCantidad(
+                            item.id
+                          )
+                        }
+                      >
+                        −
+                      </button>
+
+                      <strong>
+                        {item.cantidad}
+                      </strong>
+
+                      <button
+                        onClick={() =>
+                          aumentarCantidad(
+                            item.id
+                          )
+                        }
+                      >
+                        +
+                      </button>
+
+                    </div>
+
+                    <strong className="client-cart-item-total">
+                      $
+                      {formatearPrecio(
+                        Number(item.precio) *
+                        item.cantidad
+                      )}
+                    </strong>
+
+                    <button
+                      className="client-cart-remove"
+                      onClick={() =>
+                        eliminarDelCarrito(
+                          item.id
+                        )
+                      }
+                    >
+                      Eliminar
+                    </button>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+              <aside className="client-cart-summary">
+
+                <span>
+                  RESUMEN DEL PEDIDO
+                </span>
+
+                <h3>
+                  Total
+                </h3>
+
+                <strong>
+                  $
+                  {formatearPrecio(
+                    total
+                  )}
+                </strong>
+
+                <div className="checkout-payment-method">
+
+                  <span className="checkout-payment-label">
+                    Método de pago
+                  </span>
+
+                  <label className="checkout-payment-option">
+
+                    <input
+                      type="radio"
+                      checked
+                      readOnly
+                    />
+
+                    <div>
+                      <strong>
+                        Transferencia o depósito bancario
+                      </strong>
+                      <small>
+                        No se cobra con tarjeta en línea.
+                        Recibirás por correo el comprobante
+                        y los datos bancarios.
+                      </small>
+                    </div>
+
+                  </label>
+
+                </div>
+
+                <button
+                  className="client-checkout-button"
+                  onClick={
+                    realizarPedido
+                  }
+                  disabled={enviandoPedido}
+                >
+                  {enviandoPedido
+                    ? "Generando pedido..."
+                    : "Confirmar pedido"}
+                </button>
+
+                <button
+                  className="client-secondary-button"
+                  onClick={() =>
+                    cambiarVista("productos")
+                  }
+                >
+                  Seguir comprando
+                </button>
+
+                <p>
+                  Tu pedido quedará como
+                  <strong> Pendiente de pago </strong>
+                  hasta que el administrador
+                  valide tu transferencia.
+                </p>
+
+              </aside>
+
+            </div>
+
+          )}
 
         </div>
+      );
+    }
 
-        {cargandoPedidos ? (
+    // MIS PEDIDOS
+    if (vistaActual === "pedidos") {
 
-          <div className="client-loading">
-            Cargando tus pedidos...
-          </div>
+      return (
 
-        ) : pedidos.length === 0 ? (
+        <div className="client-view">
 
-          <div className="client-empty-state">
+          {error && (
+            <div className="client-message error">
+              {error}
+            </div>
+          )}
 
-            <h3>
-              Todavía no tienes pedidos
-            </h3>
+          <div className="client-section-header">
 
-            <p>
-              Cuando realices tu primer pedido
-              aparecerá aquí.
-            </p>
+            <div>
+
+              <span className="client-eyebrow">
+                HISTORIAL
+              </span>
+
+              <h2>
+                Mis pedidos
+              </h2>
+
+              <p>
+                Consulta el estado de los pedidos que has realizado.
+              </p>
+
+            </div>
 
             <button
-              className="client-primary-button"
-              onClick={() =>
-                cambiarVista("productos")
+              className="client-secondary-button"
+              onClick={
+                cargarMisPedidos
               }
             >
-              Ver productos
+              Actualizar
             </button>
 
           </div>
 
-        ) : (
+          {cargandoPedidos ? (
 
-          <div className="client-orders-list">
+            <div className="client-loading">
+              Cargando tus pedidos...
+            </div>
 
-            {pedidos.map(pedido => (
+          ) : pedidos.length === 0 ? (
 
-              <article
-                className="client-order-card"
-                key={pedido.id}
+            <div className="client-empty-state">
+
+              <h3>
+                Todavía no tienes pedidos
+              </h3>
+
+              <p>
+                Cuando realices tu primer pedido
+                aparecerá aquí.
+              </p>
+
+              <button
+                className="client-primary-button"
+                onClick={() =>
+                  cambiarVista("productos")
+                }
               >
+                Ver productos
+              </button>
 
-                <div className="client-order-header">
+            </div>
 
-                  <div>
+          ) : (
 
-                    <span>
-                      PEDIDO
-                    </span>
+            <div className="client-orders-list">
 
-                    <h3>
-                      #{pedido.id}
-                    </h3>
+              {pedidos.map(pedido => (
 
-                  </div>
+                <article
+                  className="client-order-card"
+                  key={pedido.id}
+                >
 
-                  <span
-                    className={obtenerEstadoClase(
-                      pedido.estado
-                    )}
-                  >
-                    {ETIQUETAS_ESTADO[pedido.estado] ||
-                      pedido.estado}
-                  </span>
+                  <div className="client-order-header">
 
-                </div>
+                    <div>
 
-                <div className="client-order-details">
+                      <span>
+                        PEDIDO
+                      </span>
 
-                  <div>
+                      <h3>
+                        #{pedido.id}
+                      </h3>
 
-                    <span>
-                      Fecha
-                    </span>
+                    </div>
 
-                    <strong>
-                      {formatearFecha(
-                        pedido.fecha
+                    <span
+                      className={obtenerEstadoClase(
+                        pedido.estado
                       )}
-                    </strong>
-
-                  </div>
-
-                  <div>
-
-                    <span>
-                      Productos
+                    >
+                      {ETIQUETAS_ESTADO[pedido.estado] ||
+                        pedido.estado}
                     </span>
 
-                    <strong>
-                      {pedido.cantidad_productos}
-                    </strong>
+                  </div>
+
+                  <div className="client-order-details">
+
+                    <div>
+
+                      <span>
+                        Fecha
+                      </span>
+
+                      <strong>
+                        {formatearFecha(
+                          pedido.fecha
+                        )}
+                      </strong>
+
+                    </div>
+
+                    <div>
+
+                      <span>
+                        Productos
+                      </span>
+
+                      <strong>
+                        {pedido.cantidad_productos}
+                      </strong>
+
+                    </div>
+
+                    <div>
+
+                      <span>
+                        Total
+                      </span>
+
+                      <strong>
+                        $
+                        {formatearPrecio(
+                          pedido.total
+                        )}
+                      </strong>
+
+                    </div>
 
                   </div>
 
-                  <div>
+                  {pedido.estado === "PENDIENTE" && (
 
-                    <span>
-                      Total
-                    </span>
+                    <p className="client-order-note">
+                      Realiza tu pago con las instrucciones
+                      que enviamos a tu correo. El administrador
+                      lo validará y aceptará tu pedido.
+                    </p>
 
-                    <strong>
-                      $
-                      {formatearPrecio(
-                        pedido.total
-                      )}
-                    </strong>
+                  )}
 
-                  </div>
+                  {pedido.estado === "ACEPTADO" && (
 
-                </div>
+                    <p className="client-order-note">
+                      Tu pedido fue aceptado.
+                    </p>
 
-                {pedido.estado === "PENDIENTE" && (
+                  )}
 
-                  <p className="client-order-note">
-                    Realiza tu pago con las instrucciones
-                    que enviamos a tu correo. El administrador
-                    lo validará y aceptará tu pedido.
-                  </p>
+                  {pedido.estado === "RECHAZADO" && (
 
-                )}
+                    <p className="client-order-note">
+                      Tu pedido fue rechazado
+                      por el administrador.
+                    </p>
 
-                {pedido.estado === "ACEPTADO" && (
+                  )}
 
-                  <p className="client-order-note">
-                    Tu pedido fue aceptado.
-                  </p>
+                </article>
 
-                )}
+              ))}
 
-                {pedido.estado === "RECHAZADO" && (
+            </div>
 
-                  <p className="client-order-note">
-                    Tu pedido fue rechazado
-                    por el administrador.
-                  </p>
+          )}
 
-                )}
+        </div>
+      );
+    }
 
-              </article>
-
-            ))}
-
-          </div>
-
-        )}
-
-      </div>
-    );
+    return null;
   }
 
-  return null;
+  return (
+
+    <div className="shop">
+
+      <aside className="shop-rail">
+
+        <span className="shop-rail-logo">
+          5m
+        </span>
+
+        <nav>
+
+          {MENU.map(item => (
+
+            <button
+              key={item.vista}
+              className={
+                vistaActual === item.vista
+                  ? "shop-rail-item active"
+                  : "shop-rail-item"
+              }
+              onClick={() =>
+                cambiarVista(item.vista)
+              }
+              aria-label={item.etiqueta}
+              title={item.etiqueta}
+            >
+              <Icono nombre={item.icono} />
+
+              {item.vista === "carrito" &&
+                cantidadTotal > 0 && (
+                  <span className="shop-rail-badge">
+                    {cantidadTotal}
+                  </span>
+                )}
+            </button>
+
+          ))}
+
+        </nav>
+
+        <div className="shop-rail-bottom">
+
+          <span
+            className="shop-avatar"
+            title={usuario?.nombre}
+          >
+            {usuario?.nombre
+              ?.charAt(0)
+              .toUpperCase()}
+          </span>
+
+          <button
+            className="shop-rail-item"
+            onClick={onCerrarSesion}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <Icono nombre="salir" />
+          </button>
+
+        </div>
+
+      </aside>
+
+      <main className="shop-main">
+        {contenido()}
+      </main>
+
+    </div>
+  );
 }
 
 export default ClientModule;
